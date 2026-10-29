@@ -44,9 +44,7 @@ class Supervisor:
 
     def assess(self, *, agent_id: str, tool_id: str) -> Assessment:
         """Read only through the policy-enforcing tool boundary."""
-        snapshot = self._gateway.read_sensor(
-            agent_id=agent_id, tool_id=tool_id
-        ).snapshot
+        snapshot = self._gateway.read_sensor(agent_id=agent_id, tool_id=tool_id).snapshot
         if not snapshot.healthy or not isfinite(snapshot.temperature_c):
             return Assessment(
                 snapshot,
