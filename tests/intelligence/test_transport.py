@@ -32,9 +32,7 @@ def test_success_and_limit_forwarding() -> None:
 
 def test_oversized_response_rejected() -> None:
     with pytest.raises(ProviderTransportError, match="provider_response_too_large"):
-        ProviderClient(FakeTransport(b"long"), RequestLimits(max_response_bytes=2)).request(
-            b"ping"
-        )
+        ProviderClient(FakeTransport(b"long"), RequestLimits(max_response_bytes=2)).request(b"ping")
 
 
 def test_unexpected_response_type_rejected() -> None:
