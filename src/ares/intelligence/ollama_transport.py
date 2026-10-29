@@ -8,7 +8,9 @@ from ares.intelligence.transport import ProviderTransportError, RequestLimits
 
 
 class _RejectRedirects(HTTPRedirectHandler):
-    def redirect_request(self, req: Request, fp: object, code: int, msg: str, headers: object, newurl: str) -> None:
+    def redirect_request(  # type: ignore[override]
+        self, req: Request, fp: object, code: int, msg: str, headers: object, newurl: str
+    ) -> None:
         return None
 
 
