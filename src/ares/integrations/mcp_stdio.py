@@ -6,8 +6,7 @@ tool handlers. This is intentionally a narrow subset, not a general MCP SDK.
 
 import json
 import sys
-from collections.abc import TextIO
-from typing import Any
+from typing import Any, TextIO, cast
 
 from ares.integrations import ReadOnlyToolGateway
 from ares.safety import AuthorizationError, Capability, Policy
@@ -38,7 +37,7 @@ class StdioMCPServer:
         """Return a JSON-RPC response or None for a notification."""
         identifier = message.get("id")
         if message.get("jsonrpc") != "2.0" or not isinstance(message.get("method"), str):
-            return self._error(identifier, -32600, "Invalid Request")
+            return self.error_response(identifier, -32600, "Invalid Request")
         method: str = message["method"]
         if method == "notifications/initialized" and "id" not in message:
             if self.initialized:
@@ -50,7 +49,7 @@ class StdioMCPServer:
             if self.initialized:
                 return self._error(identifier, -32600, "Already initialized")
             params = message.get("params")
-            if not isinstance(params, dict) or params.get("protocolVersion") != PROTOCOL_VERSION:
+            if not isinstance(params, dict) or cast("dict[str, object]", params).get("protocolVersion") != PROTOCOL_VERSION:
                 return self._error(identifier, -32602, "Unsupported protocol version")
             self.initialized = True
             return self._success(
@@ -84,10 +83,11 @@ class StdioMCPServer:
             )
         if method == "tools/call":
             params = message.get("params")
+            parsed = cast("dict[str, object]", params) if isinstance(params, dict) else {}
             if (
                 not isinstance(params, dict)
-                or params.get("name") != TOOL_NAME
-                or params.get("arguments", {}) != {}
+                or parsed.get("name") != TOOL_NAME
+                or parsed.get("arguments", {}) != {}
             ):
                 return self._error(identifier, -32602, "Invalid tool call")
             try:
@@ -126,7 +126,7 @@ class StdioMCPServer:
         return {"jsonrpc": "2.0", "id": identifier, "result": result}
 
     @staticmethod
-    def _error(identifier: object, code: int, message: str) -> dict[str, Any]:
+    def error_response(identifier: object, code: int, message: str) -> dict[str, Any]:
         return {
             "jsonrpc": "2.0",
             "id": identifier,
@@ -141,12 +141,12 @@ def serve(stdin: TextIO, stdout: TextIO) -> None:
         try:
             message: object = json.loads(line)
         except json.JSONDecodeError:
-            response = StdioMCPServer._error(None, -32700, "Parse error")
+            response = StdioMCPServer.error_response(None, -32700, "Parse error")
         else:
             if not isinstance(message, dict):
                 response = StdioMCPServer._error(None, -32600, "Invalid Request")
             else:
-                response = server.handle(message)
+                response = server.handle(cast("dict[str, Any]", message))
         if response is not None:
             stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
             stdout.flush()
