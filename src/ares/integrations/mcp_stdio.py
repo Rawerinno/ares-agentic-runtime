@@ -73,14 +73,22 @@ class StdioMCPServer:
                         {
                             "name": TOOL_NAME,
                             "description": "Read a simulated temperature sensor (read-only)",
-                            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {},
+                                "additionalProperties": False,
+                            },
                         }
                     ]
                 },
             )
         if method == "tools/call":
             params = message.get("params")
-            if not isinstance(params, dict) or params.get("name") != TOOL_NAME or params.get("arguments", {}) != {}:
+            if (
+                not isinstance(params, dict)
+                or params.get("name") != TOOL_NAME
+                or params.get("arguments", {}) != {}
+            ):
                 return self._error(identifier, -32602, "Invalid tool call")
             try:
                 reading = self.gateway.read_sensor(
