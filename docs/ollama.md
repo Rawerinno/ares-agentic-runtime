@@ -32,3 +32,23 @@ availability, throughput and real-world quality have **not** yet been verified.
 No real device commands or approval bypass are supported.
 
 Run offline tests: `uv run pytest tests/intelligence/test_ollama.py -v`.
+
+## Run the demonstration
+
+After updating your local checkout (`git pull`) and synchronizing dependencies
+(`uv sync --dev --frozen`), you can verify the offline pipeline without Ollama:
+
+```powershell
+uv run python -m ares.intelligence.ollama_demo --temperature 85
+```
+
+After installing Ollama, starting its service and pulling the selected model:
+
+```powershell
+ollama pull llama3.2:3b
+uv run python -m ares.intelligence.ollama_demo --live --temperature 85
+```
+
+The command prints a compact JSON result with status, severity and recommendation
+category. An unsuccessful proposal returns a nonzero exit code. It never controls
+hardware or sends the sensor reading to a hosted API.
