@@ -56,7 +56,7 @@ def build_diagnostic_report(
         Evidence(EvidenceSource.SUPERVISOR, f"Rule-based reason: {assessment.reason}"),
     )
     consistent = proposal.kind is required if proposal is not None else None
-    suggestion = proposal.rationale if consistent else None
+    suggestion = proposal.rationale if proposal is not None and consistent else None
     return DiagnosticReport(
         severity=assessment.severity,
         recommendation=required,
