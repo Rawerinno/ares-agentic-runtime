@@ -5,6 +5,7 @@ import json
 from collections.abc import Sequence
 
 from ares.integrations import ReadOnlyToolGateway
+from ares.intelligence.consistency import check_consistency
 from ares.intelligence.diagnostics import build_diagnostic_report
 from ares.intelligence.hypotheses import suggested_checks
 from ares.intelligence.local import LocalReferenceModel
@@ -42,6 +43,8 @@ def run(argv: Sequence[str] | None = None) -> int:
         model = LocalReferenceModel()
     result = BoundedProposalEngine(model).evaluate(assessment)
     report = build_diagnostic_report(assessment, result.decision)
+    hypotheses = suggested_checks(assessment)
+    consistency = check_consistency(assessment, report, hypotheses)
     print(
         json.dumps(
             {
@@ -58,9 +61,11 @@ def run(argv: Sequence[str] | None = None) -> int:
                     {"source": item.source.value, "fact": item.fact} for item in report.evidence
                 ],
                 "limitations": report.limitation,
+                "consistency_passed": consistency.passed,
+                "consistency_findings": [item.value for item in consistency.findings],
                 "hypotheses": [
                     {"title": h.title, "verification": h.verification, "status": h.status.value}
-                    for h in suggested_checks(assessment)
+                    for h in hypotheses
                 ],
             },
             sort_keys=True,
