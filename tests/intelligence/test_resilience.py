@@ -15,7 +15,7 @@ class Stub:
     def __init__(self, payload: object) -> None:
         self.payload = payload
 
-    def propose(self, observation: Assessment) -> object:
+    def propose(self, assessment: Assessment) -> object:
         return self.payload
 
 
@@ -59,7 +59,7 @@ def test_invalid_decision_rejected() -> None:
 
 def test_provider_exception_is_redacted() -> None:
     class Failing:
-        def propose(self, observation: Assessment) -> object:
+        def propose(self, assessment: Assessment) -> object:
             raise RuntimeError("secret-provider-token")
 
     output = BoundedProposalEngine(Failing()).evaluate(assessment())
