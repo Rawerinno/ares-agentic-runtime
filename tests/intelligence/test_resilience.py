@@ -1,4 +1,5 @@
 """Deterministic tests for bounded and auditable model outcomes."""
+
 import pytest
 
 from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus
