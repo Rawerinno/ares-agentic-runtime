@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Protocol
+from typing import Protocol, cast
 
 from ares.supervisor import Assessment, Severity
 
@@ -49,15 +49,16 @@ class ProposalEngine:
 
     def propose(self, assessment: Assessment) -> Decision:
         raw = self._model.propose(assessment)
-        if not isinstance(raw, dict) or set(raw) != {
+        if not isinstance(raw, dict) or set(cast("dict[str, object]", raw)) != {
             "kind",
             "rationale",
             "assessment_severity",
         }:
             raise DecisionError("Model output must have exactly three fields")
-        kind = raw["kind"]
-        reason = raw["rationale"]
-        severity = raw["assessment_severity"]
+        fields = cast("dict[str, object]", raw)
+        kind = fields["kind"]
+        reason = fields["rationale"]
+        severity = fields["assessment_severity"]
         if type(kind) is not str or type(reason) is not str or type(severity) is not str:
             raise DecisionError("Model fields must be strings")
         try:
