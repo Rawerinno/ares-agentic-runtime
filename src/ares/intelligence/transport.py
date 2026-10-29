@@ -30,6 +30,7 @@ class ProviderTransport(Protocol):
 
     def request(self, payload: bytes, *, limits: RequestLimits) -> bytes:
         """Return bounded response bytes or raise a transport error."""
+        ...
 
 
 class ProviderClient:
@@ -44,7 +45,7 @@ class ProviderClient:
             response = self._transport.request(payload, limits=self._limits)
         except Exception as exc:
             raise ProviderTransportError("provider_transport_failed") from exc
-        if not isinstance(response, bytes):
+        if type(response) is not bytes:
             raise ProviderTransportError("invalid_transport_response")
         if len(response) > self._limits.max_response_bytes:
             raise ProviderTransportError("provider_response_too_large")
