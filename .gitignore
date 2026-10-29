@@ -34,3 +34,5 @@ dist/
 
 # Logs
 *.log
+# Local ARES audit files
+.ares-local-audit*.jsonl
