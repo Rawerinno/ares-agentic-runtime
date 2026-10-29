@@ -52,3 +52,22 @@ uv run python -m ares.intelligence.ollama_demo --live --temperature 85
 The command prints a compact JSON result with status, severity and recommendation
 category. An unsuccessful proposal returns a nonzero exit code. It never controls
 hardware or sends the sensor reading to a hosted API.
+
+## Compare several simulated conditions
+
+Run a six-case offline control benchmark:
+
+```powershell
+uv run python -m ares.evaluation.ollama_benchmark
+```
+
+To evaluate the installed model on the same conditions:
+
+```powershell
+uv run python -m ares.evaluation.ollama_benchmark --live --model llama3.2:3b
+```
+
+The JSON output contains outcome, recommendation category, and elapsed time
+per scenario. A zero exit code means all six scenarios yielded accepted
+proposals, not that the model is validated for physical device operation.
+The benchmark does not perform any actuation or external cloud calls.
