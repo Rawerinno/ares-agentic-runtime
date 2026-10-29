@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ares.integrations import ReadOnlyToolGateway
+from ares.intelligence.governance import governed_decision
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
@@ -43,6 +44,7 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
     engine = BoundedProposalEngine(adapter)
     cases: list[dict[str, object]] = []
     valid = 0
+    governed_valid = 0
     for scenario in SCENARIOS:
         gateway = ReadOnlyToolGateway(
             Policy(frozenset({("supervisor", "temperature", Capability.READ)}))
@@ -60,6 +62,13 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
             and outcome.decision.kind.value == scenario.expected_kind
         )
         valid += int(passed)
+        governed = (
+            governed_decision(assessment, outcome.decision)
+            if outcome.decision is not None
+            else None
+        )
+        governed_passed = governed is not None and governed.kind.value == scenario.expected_kind
+        governed_valid += int(governed_passed)
         cases.append(
             {
                 "temperature_c": scenario.temperature_c,
@@ -67,16 +76,19 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
                 "status": outcome.status.value,
                 "proposal": outcome.decision.kind.value if outcome.decision else None,
                 "expected_proposal": scenario.expected_kind,
+                "governed_proposal": governed.kind.value if governed else None,
+                "governed_passed": governed_passed,
                 "error_code": outcome.error_code,
                 "elapsed_ms": round(outcome.elapsed_ms, 2),
                 "passed": passed,
             }
         )
     return {
-        "evaluation_note": "Exact classification benchmark, not hardware safety certification",
+        "evaluation_note": "Raw model and governed scores are distinct; not a safety certification",
         "mode": "ollama" if live else "offline-reference",
         "model": model if live else None,
         "passed": valid,
+        "governed_passed": governed_valid,
         "total": len(SCENARIOS),
         "cases": cases,
     }
