@@ -33,8 +33,6 @@ def append_entry(
     verify_entries(existing)
     if not event or len(event) > 80 or not event.isascii():
         raise ValueError("Invalid audit event name")
-    if not isinstance(payload, dict):
-        raise ValueError("Invalid audit payload")
     sequence = len(existing) + 1
     previous_hash = existing[-1].digest if existing else "0" * 64
     body: dict[str, object] = {
@@ -112,11 +110,11 @@ def from_jsonl(content: str) -> tuple[AuditEntry, ...]:
                 raise AuditIntegrityError("audit_types_invalid")
             entries.append(
                 AuditEntry(
-                    cast("int", fields["sequence"]),
-                    cast("str", fields["previous_hash"]),
-                    cast("str", fields["event"]),
+                    fields["sequence"],
+                    fields["previous_hash"],
+                    fields["event"],
                     cast("dict[str, object]", fields["payload"]),
-                    cast("str", fields["digest"]),
+                    fields["digest"],
                 )
             )
         result = tuple(entries)
