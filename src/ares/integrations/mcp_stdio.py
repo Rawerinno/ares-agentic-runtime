@@ -147,7 +147,7 @@ def serve(stdin: TextIO, stdout: TextIO) -> None:
             response = StdioMCPServer.error_response(None, -32700, "Parse error")
         else:
             if not isinstance(message, dict):
-                response = StdioMCPServer._error(None, -32600, "Invalid Request")
+                response = StdioMCPServer.error_response(None, -32600, "Invalid Request")
             else:
                 response = server.handle(cast("dict[str, Any]", message))
         if response is not None:
