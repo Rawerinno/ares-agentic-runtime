@@ -11,7 +11,9 @@ from ares.supervisor import Severity, Supervisor
 
 
 def supervisor(temperature: float, *, granted: bool = True) -> Supervisor:
-    grants = frozenset({("supervisor", "temperature", Capability.READ)}) if granted else frozenset()
+    grants: frozenset[tuple[str, str, Capability]] = (
+        frozenset({("supervisor", "temperature", Capability.READ)}) if granted else frozenset()
+    )
     gateway = ReadOnlyToolGateway(Policy(grants))
     gateway.register_sensor(
         "temperature",
