@@ -15,8 +15,6 @@ def governed_decision(assessment: Assessment, proposal: Decision) -> Decision:
     }[assessment.severity]
     return Decision(
         kind=required,
-        rationale=(
-            proposal.rationale if proposal.kind is required else assessment.recommendation
-        ),
+        rationale=(proposal.rationale if proposal.kind is required else assessment.recommendation),
         assessment_severity=assessment.severity,
     )
