@@ -62,7 +62,11 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
             and outcome.decision.kind.value == scenario.expected_kind
         )
         valid += int(passed)
-        governed = (\n            governed_decision(assessment, outcome.decision)\n            if outcome.decision is not None\n            else None\n        )
+        governed = (
+            governed_decision(assessment, outcome.decision)
+            if outcome.decision is not None
+            else None
+        )
         governed_passed = governed is not None and governed.kind.value == scenario.expected_kind
         governed_valid += int(governed_passed)
         cases.append(
