@@ -29,9 +29,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         "sensor.temperature",
         DeviceSimulator("simulated-sensor", initial_temperature_c=args.temperature),
     )
-    assessment = Supervisor(gateway).assess(
-        agent_id="supervisor", tool_id="sensor.temperature"
-    )
+    assessment = Supervisor(gateway).assess(agent_id="supervisor", tool_id="sensor.temperature")
     if args.live:
         limits = RequestLimits(timeout_seconds=30.0, max_response_bytes=16384)
         model = OllamaAdapter(
