@@ -64,9 +64,7 @@ def test_high_risk_read_requires_approval() -> None:
     assert policy().decide(request) is AuthorizationDecision.REQUIRE_APPROVAL
     with pytest.raises(AuthorizationError):
         policy().authorize(request)
-    policy().authorize(
-        request, Approval("agent-1", "sensor-1", Capability.READ, "engineer-1")
-    )
+    policy().authorize(request, Approval("agent-1", "sensor-1", Capability.READ, "engineer-1"))
 
 
 @pytest.mark.parametrize(
