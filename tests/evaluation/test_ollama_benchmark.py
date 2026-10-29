@@ -23,3 +23,11 @@ def test_cli_emits_machine_readable_json(capsys: CaptureFixture[str]) -> None:
     report: dict[str, object] = json.loads(capsys.readouterr().out)
     assert report["total"] == 6
     assert report["passed"] == 6
+
+
+def test_normal_scenario_requires_observe() -> None:
+    report = benchmark()
+    cases = cast("list[dict[str, object]]", report["cases"])
+    assert cases[0]["expected_proposal"] == "observe"
+    assert cases[2]["expected_proposal"] == "investigate"
+    assert cases[4]["expected_proposal"] == "request_review"
