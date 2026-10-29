@@ -79,3 +79,20 @@ def test_invalid_model_and_port() -> None:
         )
     with pytest.raises(ValueError):
         OllamaLocalTransport(port=0)
+
+def test_prompt_calibrates_normal_and_warning() -> None:
+    for severity, expected in (
+        (Severity.NORMAL, "observe"),
+        (Severity.WARNING, "investigate"),
+    ):
+        output = {
+            "kind": expected,
+            "rationale": "Follow the established severity policy",
+            "assessment_severity": severity.value,
+        }
+        transport = FakeTransport(json.dumps({"response": json.dumps(output)}).encode())
+        decision = ProposalEngine(make_adapter(transport)).propose(assessment(severity))
+        assert decision.kind.value == expected
+        request = json.loads(transport.payload)
+        assert f"Authoritative recommendation kind: {expected}" in request["prompt"]
+        assert "normal -> observe, warning -> investigate" in request["prompt"]
