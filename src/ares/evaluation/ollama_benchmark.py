@@ -53,8 +53,7 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
         assessment = Supervisor(gateway).assess(agent_id="supervisor", tool_id="temperature")
         outcome = engine.evaluate(assessment)
         passed = (
-            assessment.severity is scenario.expected
-            and outcome.status is OutcomeStatus.ACCEPTED
+            assessment.severity is scenario.expected and outcome.status is OutcomeStatus.ACCEPTED
         )
         valid += int(passed)
         cases.append(
