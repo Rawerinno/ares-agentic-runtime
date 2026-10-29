@@ -2,9 +2,14 @@
 
 import ipaddress
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPHandler, Request, build_opener
+from urllib.request import HTTPHandler, HTTPRedirectHandler, Request, build_opener
 
 from ares.intelligence.transport import ProviderTransportError, RequestLimits
+
+
+class _RejectRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req: Request, fp: object, code: int, msg: str, headers: object, newurl: str) -> None:
+        return None
 
 
 class OllamaLocalTransport:
@@ -21,7 +26,7 @@ class OllamaLocalTransport:
             raise ValueError("Invalid Ollama port")
         netloc = f"[{address}]" if address.version == 6 else str(address)
         self._url = f"http://{netloc}:{port}/api/generate"
-        self._opener = build_opener(HTTPHandler())
+        self._opener = build_opener(HTTPHandler(), _RejectRedirects())
 
     def request(self, payload: bytes, *, limits: RequestLimits) -> bytes:
         """Apply socket timeout and enforce a cap while reading response bytes.
