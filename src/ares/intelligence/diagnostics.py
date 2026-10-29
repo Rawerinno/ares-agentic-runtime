@@ -47,9 +47,7 @@ def build_diagnostic_report(
         raise ValueError("Proposal severity does not match evidence")
     snapshot = assessment.snapshot
     temperature = (
-        f"{snapshot.temperature_c:.1f} C"
-        if isfinite(snapshot.temperature_c)
-        else "non-finite"
+        f"{snapshot.temperature_c:.1f} C" if isfinite(snapshot.temperature_c) else "non-finite"
     )
     evidence = (
         Evidence(EvidenceSource.SENSOR, f"Temperature reading: {temperature}"),
