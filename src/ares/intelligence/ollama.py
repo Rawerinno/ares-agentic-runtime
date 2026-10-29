@@ -31,15 +31,28 @@ class OllamaAdapter:
             "required": ["kind", "rationale", "assessment_severity"],
             "additionalProperties": False,
         }
+        # The trusted supervisor decides severity; the model only explains that decision.
+        # Unambiguous escalation rules reduce unnecessary human-review recommendations.
+        expected_kind = {
+            "normal": "observe",
+            "warning": "investigate",
+            "critical": "request_review",
+        }[assessment.severity.value]
         prompt = (
-            "You are a diagnostic recommendation assistant. "
-            "Return ONLY JSON. Do not suggest commands, actuators or direct actions. "
-            "Never change severity. Critical must request_review; warning must not observe. "
-            f"Measured temperature C: {assessment.snapshot.temperature_c}. "
-            f"Sensor healthy: {assessment.snapshot.healthy}. "
-            f"Severity: {assessment.severity.value}. "
+            "You are a diagnostic assistant, NOT an equipment controller. "
+            "Return only JSON matching the schema. "
+            "The measured severity is authoritative; do not change it. "
+            "Recommendation policy: normal -> observe, warning -> investigate, "
+            "critical -> request_review. "
+            "Never escalate a normal or warning measurement to request_review "
+            "without a separate documented reason, which this input does not provide. "
+            "Never generate hardware instructions or actuator commands. "
+            f"Authoritative recommendation kind: {expected_kind}. "
+            f"Temperature Celsius: {assessment.snapshot.temperature_c}. "
+            f"Healthy sensor: {assessment.snapshot.healthy}. "
+            f"Authoritative severity: {assessment.severity.value}. "
             f"Reason: {assessment.reason}. "
-            "Propose a safe observation or human investigation."
+            "Supply a brief rationale consistent with the authoritative classification."
         )
         payload = {
             "model": self._model,
