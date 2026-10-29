@@ -15,9 +15,7 @@ from ares.supervisor import Severity, Supervisor
 
 def pipeline(temperature: float, *, grant: bool = True) -> AnalysisPipeline:
     grants: frozenset[tuple[str, str, Capability]] = (
-        frozenset({("supervisor", "temperature", Capability.READ)})
-        if grant
-        else frozenset()
+        frozenset({("supervisor", "temperature", Capability.READ)}) if grant else frozenset()
     )
     gateway = ReadOnlyToolGateway(Policy(grants))
     gateway.register_sensor(
@@ -71,9 +69,7 @@ def test_invalid_model_output_cannot_reach_result() -> None:
     gateway = ReadOnlyToolGateway(
         Policy(frozenset({("supervisor", "temperature", Capability.READ)}))
     )
-    gateway.register_sensor(
-        "temperature", DeviceSimulator("simulator", initial_temperature_c=85.0)
-    )
+    gateway.register_sensor("temperature", DeviceSimulator("simulator", initial_temperature_c=85.0))
     flow = AnalysisPipeline(Supervisor(gateway), ProposalEngine(UnsafeModel()))
     with pytest.raises(DecisionError):
         flow.analyze(agent_id="supervisor", tool_id="temperature")
