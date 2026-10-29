@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.diagnostics import build_diagnostic_report
+from ares.intelligence.hypotheses import suggested_checks
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
@@ -57,6 +58,10 @@ def run(argv: Sequence[str] | None = None) -> int:
                     {"source": item.source.value, "fact": item.fact} for item in report.evidence
                 ],
                 "limitations": report.limitation,
+                "hypotheses": [
+                    {"title": h.title, "verification": h.verification, "status": h.status.value}
+                    for h in suggested_checks(assessment)
+                ],
             },
             sort_keys=True,
         )
