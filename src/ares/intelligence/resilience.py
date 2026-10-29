@@ -6,6 +6,7 @@ No network operations, tool execution or implicit retries are performed.
 from dataclasses import dataclass
 from enum import StrEnum
 from time import monotonic
+from typing import cast
 
 from ares.intelligence.decisions import Decision, DecisionError, ModelAdapter, ProposalEngine
 from ares.supervisor import Assessment
@@ -47,13 +48,14 @@ class BoundedProposalEngine:
             return self._outcome(OutcomeStatus.MODEL_ERROR, None, "model_exception", started)
         if not isinstance(raw, dict):
             return self._outcome(OutcomeStatus.REJECTED, None, "invalid_shape", started)
-        if len(str(raw)) > self._limit:
+        parsed = cast("dict[str, object]", raw)
+        if len(str(parsed)) > self._limit:
             return self._outcome(OutcomeStatus.REJECTED, None, "response_too_large", started)
         try:
 
             class ReturnedModel:
-                def propose(self, observation: Assessment) -> object:
-                    return raw
+                def propose(self, assessment: Assessment) -> object:
+                    return parsed
 
             decision = ProposalEngine(ReturnedModel()).propose(assessment)
         except DecisionError:
