@@ -27,8 +27,7 @@ def assess_quality(
         governed_category_valid=(
             report.severity is assessment.severity
             and not any(
-                finding
-                in (FindingCode.RECOMMENDATION_MISMATCH, FindingCode.SEVERITY_MISMATCH)
+                finding in (FindingCode.RECOMMENDATION_MISMATCH, FindingCode.SEVERITY_MISMATCH)
                 for finding in consistency.findings
             )
         ),
