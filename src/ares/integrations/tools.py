@@ -6,8 +6,14 @@ Only a trusted registered simulator can be called through this gateway.
 
 from dataclasses import dataclass
 
-from ares.safety import AuthorizationDecision, AuthorizationError, Capability, Policy
-from ares.safety import RiskLevel, ToolRequest
+from ares.safety import (
+    AuthorizationDecision,
+    AuthorizationError,
+    Capability,
+    Policy,
+    RiskLevel,
+    ToolRequest,
+)
 from ares.simulation import DeviceSimulator, DeviceSnapshot
 
 
