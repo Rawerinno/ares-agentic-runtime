@@ -20,15 +20,16 @@ from ares.supervisor import Severity, Supervisor
 class Scenario:
     temperature_c: float
     expected: Severity
+    expected_kind: str
 
 
 SCENARIOS = (
-    Scenario(20.0, Severity.NORMAL),
-    Scenario(59.9, Severity.NORMAL),
-    Scenario(60.0, Severity.WARNING),
-    Scenario(79.9, Severity.WARNING),
-    Scenario(80.0, Severity.CRITICAL),
-    Scenario(95.0, Severity.CRITICAL),
+    Scenario(20.0, Severity.NORMAL, "observe"),
+    Scenario(59.9, Severity.NORMAL, "observe"),
+    Scenario(60.0, Severity.WARNING, "investigate"),
+    Scenario(79.9, Severity.WARNING, "investigate"),
+    Scenario(80.0, Severity.CRITICAL, "request_review"),
+    Scenario(95.0, Severity.CRITICAL, "request_review"),
 )
 
 
@@ -53,7 +54,10 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
         assessment = Supervisor(gateway).assess(agent_id="supervisor", tool_id="temperature")
         outcome = engine.evaluate(assessment)
         passed = (
-            assessment.severity is scenario.expected and outcome.status is OutcomeStatus.ACCEPTED
+            assessment.severity is scenario.expected
+            and outcome.status is OutcomeStatus.ACCEPTED
+            and outcome.decision is not None
+            and outcome.decision.kind.value == scenario.expected_kind
         )
         valid += int(passed)
         cases.append(
@@ -62,12 +66,14 @@ def benchmark(*, live: bool = False, model: str = "llama3.2:3b") -> dict[str, ob
                 "severity": assessment.severity.value,
                 "status": outcome.status.value,
                 "proposal": outcome.decision.kind.value if outcome.decision else None,
+                "expected_proposal": scenario.expected_kind,
                 "error_code": outcome.error_code,
                 "elapsed_ms": round(outcome.elapsed_ms, 2),
                 "passed": passed,
             }
         )
     return {
+        "evaluation_note": "Exact classification benchmark, not hardware safety certification",
         "mode": "ollama" if live else "offline-reference",
         "model": model if live else None,
         "passed": valid,
