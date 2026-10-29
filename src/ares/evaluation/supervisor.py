@@ -34,7 +34,8 @@ def evaluate_supervisor(cases: tuple[EvalCase, ...]) -> EvalReport:
             Policy(frozenset({("benchmark", "temperature", Capability.READ)}))
         )
         gateway.register_sensor(
-            "temperature", DeviceSimulator("benchmark-sensor", initial_temperature_c=case.temperature_c)
+            "temperature",
+            DeviceSimulator("benchmark-sensor", initial_temperature_c=case.temperature_c),
         )
         actual = Supervisor(gateway).assess(agent_id="benchmark", tool_id="temperature").severity
         if actual is not case.expected:
