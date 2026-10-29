@@ -1,6 +1,7 @@
 """Offline benchmark tests without Ollama running."""
 
 import json
+from typing import cast
 
 from _pytest.capture import CaptureFixture
 
@@ -12,7 +13,7 @@ def test_reference_model_passes_all_scenarios() -> None:
     assert report["mode"] == "offline-reference"
     assert report["passed"] == len(SCENARIOS)
     assert report["total"] == len(SCENARIOS)
-    cases = report["cases"]
+    cases = cast("list[dict[str, object]]", report["cases"])
     assert isinstance(cases, list)
     assert all(case["passed"] is True for case in cases)
 
