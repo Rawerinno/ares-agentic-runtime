@@ -2,6 +2,7 @@
 
 No network operations, tool execution or implicit retries are performed.
 """
+
 from dataclasses import dataclass
 from enum import StrEnum
 from time import monotonic
@@ -49,6 +50,7 @@ class BoundedProposalEngine:
         if len(str(raw)) > self._limit:
             return self._outcome(OutcomeStatus.REJECTED, None, "response_too_large", started)
         try:
+
             class ReturnedModel:
                 def propose(self, observation: Assessment) -> object:
                     return raw
