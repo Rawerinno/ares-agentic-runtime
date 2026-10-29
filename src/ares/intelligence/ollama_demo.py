@@ -5,6 +5,7 @@ import json
 from collections.abc import Sequence
 
 from ares.integrations import ReadOnlyToolGateway
+from ares.intelligence.diagnostics import build_diagnostic_report
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
@@ -39,6 +40,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     else:
         model = LocalReferenceModel()
     result = BoundedProposalEngine(model).evaluate(assessment)
+    report = build_diagnostic_report(assessment, result.decision)
     print(
         json.dumps(
             {
@@ -47,6 +49,14 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "status": result.status.value,
                 "proposal": result.decision.kind.value if result.decision else None,
                 "error_code": result.error_code,
+                "governed_proposal": report.recommendation.value,
+                "trusted_explanation": report.explanation,
+                "model_consistent": report.model_consistent,
+                "model_suggestion": report.model_suggestion,
+                "evidence": [
+                    {"source": item.source.value, "fact": item.fact} for item in report.evidence
+                ],
+                "limitations": report.limitation,
             },
             sort_keys=True,
         )

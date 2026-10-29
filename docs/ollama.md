@@ -71,3 +71,11 @@ The JSON output contains outcome, recommendation category, and elapsed time
 per scenario. A zero exit code means all six scenarios yielded accepted
 proposals, not that the model is validated for physical device operation.
 The benchmark does not perform any actuation or external cloud calls.
+
+## Evidence in diagnostic demo
+
+The diagnostic CLI now includes source-labelled evidence, a rule-derived
+`governed_proposal`, `trusted_explanation`, `model_consistent` and an
+optional `model_suggestion`. A contradictory LLM suggestion is omitted from
+the report, rather than displayed as verified reasoning. These fields do not
+make the model clinically or industrially validated and cannot control devices.
