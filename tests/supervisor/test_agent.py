@@ -11,11 +11,7 @@ from ares.supervisor import Severity, Supervisor
 
 
 def supervisor(temperature: float, *, granted: bool = True) -> Supervisor:
-    grants = (
-        frozenset({("supervisor", "temperature", Capability.READ)})
-        if granted
-        else frozenset()
-    )
+    grants = frozenset({("supervisor", "temperature", Capability.READ)}) if granted else frozenset()
     gateway = ReadOnlyToolGateway(Policy(grants))
     gateway.register_sensor(
         "temperature",
@@ -45,9 +41,7 @@ def test_temperature_classification(value: float, expected: Severity) -> None:
 
 def test_no_permission_means_no_observation() -> None:
     with pytest.raises(AuthorizationError):
-        supervisor(20.0, granted=False).assess(
-            agent_id="supervisor", tool_id="temperature"
-        )
+        supervisor(20.0, granted=False).assess(agent_id="supervisor", tool_id="temperature")
 
 
 @pytest.mark.parametrize(
@@ -65,13 +59,9 @@ def test_supervisor_runs_inside_task_executor() -> None:
     reports: list[Severity] = []
 
     def inspect(task: Task) -> None:
-        reports.append(
-            agent.assess(agent_id=task.agent_id, tool_id="temperature").severity
-        )
+        reports.append(agent.assess(agent_id=task.agent_id, tool_id="temperature").severity)
 
-    result = TaskExecutor().execute(
-        Task("task-1", "supervisor", "Inspect temperature"), inspect
-    )
+    result = TaskExecutor().execute(Task("task-1", "supervisor", "Inspect temperature"), inspect)
     assert result.task.status is TaskStatus.COMPLETED
     assert reports == [Severity.CRITICAL]
 
