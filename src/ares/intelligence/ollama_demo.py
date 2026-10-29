@@ -3,7 +3,9 @@
 import argparse
 import json
 from collections.abc import Sequence
+from pathlib import Path
 
+from ares.evaluation.audit_storage import extend_audit, read_audit
 from ares.evaluation.diagnostic_audit import record_diagnostic
 from ares.evaluation.diagnostic_quality import assess_quality
 from ares.integrations import ReadOnlyToolGateway
@@ -25,6 +27,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--temperature", type=float, default=85.0)
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--live", action="store_true", help="Call local Ollama on loopback")
+    parser.add_argument("--audit-file", type=Path, help="Opt in to local JSONL audit storage")
     args = parser.parse_args(argv)
 
     gateway = ReadOnlyToolGateway(
@@ -47,7 +50,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     report = build_diagnostic_report(assessment, result.decision)
     hypotheses = suggested_checks(assessment)
     consistency = check_consistency(assessment, report, hypotheses)
-    audit = record_diagnostic((), assessment, report, result, consistency)
+    previous = read_audit(args.audit_file) if args.audit_file else ()
+    audit = record_diagnostic(previous, assessment, report, result, consistency)
+    if args.audit_file:
+        extend_audit(args.audit_file, previous, audit)
     quality = assess_quality(assessment, report, consistency)
     print(
         json.dumps(
