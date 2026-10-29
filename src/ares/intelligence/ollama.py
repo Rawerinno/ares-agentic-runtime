@@ -1,6 +1,7 @@
 """Ollama ModelAdapter: local generation of untrusted proposal JSON."""
 
 import json
+from typing import cast
 
 from ares.intelligence.transport import ProviderClient
 from ares.supervisor import Assessment
@@ -53,7 +54,7 @@ class OllamaAdapter:
             envelope: object = json.loads(response_bytes)
             if not isinstance(envelope, dict):
                 raise ValueError("Invalid Ollama envelope")
-            content = envelope.get("response")
+            content = cast("dict[str, object]", envelope).get("response")
             if not isinstance(content, str):
                 raise ValueError("Missing Ollama response")
             return json.loads(content)
