@@ -80,6 +80,7 @@ def test_invalid_model_and_port() -> None:
     with pytest.raises(ValueError):
         OllamaLocalTransport(port=0)
 
+
 def test_prompt_calibrates_normal_and_warning() -> None:
     for severity, expected in (
         (Severity.NORMAL, "observe"),
