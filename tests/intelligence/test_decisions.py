@@ -63,7 +63,12 @@ def test_warning_investigation_allowed() -> None:
         payload("request_review", "normal"),
         payload("request_review", "critical", ""),
         payload("request_review", "critical", "x" * 1001),
-        {"kind": "request_review", "rationale": "ok", "assessment_severity": "critical", "extra": 1},
+        {
+            "kind": "request_review",
+            "rationale": "ok",
+            "assessment_severity": "critical",
+            "extra": 1,
+        },
         {"kind": 1, "rationale": "ok", "assessment_severity": "critical"},
         {"kind": "request_review", "rationale": 1, "assessment_severity": "critical"},
         {"kind": "request_review", "rationale": "ok", "assessment_severity": 1},
