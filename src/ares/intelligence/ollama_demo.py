@@ -5,6 +5,7 @@ import json
 from collections.abc import Sequence
 
 from ares.evaluation.diagnostic_audit import record_diagnostic
+from ares.evaluation.diagnostic_quality import assess_quality
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.consistency import check_consistency
 from ares.intelligence.diagnostics import build_diagnostic_report
@@ -47,12 +48,19 @@ def run(argv: Sequence[str] | None = None) -> int:
     hypotheses = suggested_checks(assessment)
     consistency = check_consistency(assessment, report, hypotheses)
     audit = record_diagnostic((), assessment, report, result, consistency)
+    quality = assess_quality(assessment, report, consistency)
     print(
         json.dumps(
             {
                 "mode": "ollama" if args.live else "offline-reference",
                 "audit_digest": audit[-1].digest,
                 "audit_sequence": audit[-1].sequence,
+                "quality": {
+                    "governed_category_valid": quality.governed_category_valid,
+                    "evidence_present": quality.evidence_present,
+                    "model_agreement": quality.model_agreement,
+                    "free_text_verified": quality.free_text_verified,
+                },
                 "severity": assessment.severity.value,
                 "status": result.status.value,
                 "proposal": result.decision.kind.value if result.decision else None,
