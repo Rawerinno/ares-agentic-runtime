@@ -47,10 +47,13 @@ class StdioMCPServer:
             return None
         if method == "initialize":
             if self.initialized:
-                return self._error(identifier, -32600, "Already initialized")
+                return self.error_response(identifier, -32600, "Already initialized")
             params = message.get("params")
-            if not isinstance(params, dict) or cast("dict[str, object]", params).get("protocolVersion") != PROTOCOL_VERSION:
-                return self._error(identifier, -32602, "Unsupported protocol version")
+            if (
+                not isinstance(params, dict)
+                or cast("dict[str, object]", params).get("protocolVersion") != PROTOCOL_VERSION
+            ):
+                return self.error_response(identifier, -32602, "Unsupported protocol version")
             self.initialized = True
             return self._success(
                 identifier,
@@ -61,7 +64,7 @@ class StdioMCPServer:
                 },
             )
         if not self.ready:
-            return self._error(identifier, -32000, "Server not initialized")
+            return self.error_response(identifier, -32000, "Server not initialized")
         if method == "ping":
             return self._success(identifier, {})
         if method == "tools/list":
@@ -89,7 +92,7 @@ class StdioMCPServer:
                 or parsed.get("name") != TOOL_NAME
                 or parsed.get("arguments", {}) != {}
             ):
-                return self._error(identifier, -32602, "Invalid tool call")
+                return self.error_response(identifier, -32602, "Invalid tool call")
             try:
                 reading = self.gateway.read_sensor(
                     agent_id="local-simulator-client", tool_id=TOOL_NAME
@@ -119,7 +122,7 @@ class StdioMCPServer:
                     "isError": False,
                 },
             )
-        return self._error(identifier, -32601, "Method not found")
+        return self.error_response(identifier, -32601, "Method not found")
 
     @staticmethod
     def _success(identifier: object, result: dict[str, Any]) -> dict[str, Any]:
