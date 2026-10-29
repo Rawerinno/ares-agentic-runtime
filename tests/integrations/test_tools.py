@@ -20,9 +20,7 @@ class CountingSensor(DeviceSimulator):
 
 
 def gateway() -> ReadOnlyToolGateway:
-    return ReadOnlyToolGateway(
-        Policy(frozenset({("a1", "sensor.temperature", Capability.READ)}))
-    )
+    return ReadOnlyToolGateway(Policy(frozenset({("a1", "sensor.temperature", Capability.READ)})))
 
 
 def test_authorized_sensor_read() -> None:
