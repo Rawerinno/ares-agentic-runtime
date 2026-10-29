@@ -6,7 +6,7 @@ from enum import StrEnum
 from ares.core.errors import DomainError, InvalidTransitionError
 
 
-def _require_text(value: str, field: str) -> None:
+def require_text(value: str, field: str) -> None:
     if not value.strip():
         raise DomainError(f"{field} must not be blank")
 
@@ -34,8 +34,8 @@ class Agent:
     name: str
 
     def __post_init__(self) -> None:
-        _require_text(self.id, "agent.id")
-        _require_text(self.name, "agent.name")
+        require_text(self.id, "agent.id")
+        require_text(self.name, "agent.name")
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,14 +48,14 @@ class Task:
     status: TaskStatus = TaskStatus.PENDING
 
     def __post_init__(self) -> None:
-        _require_text(self.id, "task.id")
-        _require_text(self.agent_id, "task.agent_id")
-        _require_text(self.instruction, "task.instruction")
-        if not isinstance(self.status, TaskStatus):
+        require_text(self.id, "task.id")
+        require_text(self.agent_id, "task.agent_id")
+        require_text(self.instruction, "task.instruction")
+        if type(self.status) is not TaskStatus:
             raise DomainError("task.status must be a TaskStatus")
 
     def transition_to(self, status: TaskStatus) -> "Task":
         """Return a new task in the requested state if the transition is legal."""
-        if not isinstance(status, TaskStatus) or status not in _ALLOWED_TRANSITIONS[self.status]:
+        if type(status) is not TaskStatus or status not in _ALLOWED_TRANSITIONS[self.status]:
             raise InvalidTransitionError(f"Cannot transition from {self.status} to {status}")
         return replace(self, status=status)
