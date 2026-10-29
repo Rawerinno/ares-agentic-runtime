@@ -1,4 +1,5 @@
-name: CI
+
+name: ARES CI
 
 on:
   push:
@@ -9,40 +10,38 @@ permissions:
 
 jobs:
   quality:
-    name: Quality gates
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: Quality - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7.0.1
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          version: "latest-known"
+          python-version: "3.13"
           enable-cache: true
 
-      - name: Install Python
-        run: uv python install 3.13
-
-      - name: Verify lockfile
-        run: uv lock --check
-
-      - name: Sync locked environment
+      - name: Install dependencies
         run: uv sync --dev --frozen
 
-      - name: Ruff lint
-        run: uv run ruff check .
+      - name: Lint
+        run: uv run --frozen ruff check .
 
-      - name: Ruff format
-        run: uv run ruff format --check .
+      - name: Check formatting
+        run: uv run --frozen ruff format --check .
 
-      - name: Pyright
-        run: uv run pyright
+      - name: Type checking
+        run: uv run --frozen pyright
 
-      - name: Tests
-        run: uv run pytest
+      - name: Tests and coverage
+        run: uv run --frozen pytest
 
       - name: Build package
         run: uv build

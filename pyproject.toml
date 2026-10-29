@@ -18,7 +18,7 @@ module-name = "ares"
 
 [dependency-groups]
 dev = [
-    "pyright>=1.1.407,<2",
+    "pyright[nodejs]==1.1.414",
     "pytest>=8.4,<9",
     "pytest-cov>=7,<8",
     "ruff>=0.14,<1",
