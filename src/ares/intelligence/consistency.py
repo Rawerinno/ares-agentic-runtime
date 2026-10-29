@@ -6,7 +6,7 @@ from math import isfinite
 
 from ares.intelligence.decisions import DecisionKind
 from ares.intelligence.diagnostics import DiagnosticReport
-from ares.intelligence.hypotheses import InvestigationHypothesis, HypothesisStatus
+from ares.intelligence.hypotheses import HypothesisStatus, InvestigationHypothesis
 from ares.supervisor import Assessment, Severity
 
 
