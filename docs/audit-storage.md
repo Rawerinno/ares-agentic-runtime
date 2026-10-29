@@ -16,3 +16,12 @@ does not provide locking, trusted timestamps, signing, durability against all
 power-loss scenarios or defense against whole-file replacement/rollback. Use
 a path outside shared/public folders; do not store secrets or raw model text.
 A long-term trusted audit design requires access controls and an external anchor.
+
+Verify the saved file (no Ollama required):
+
+```powershell
+uv run python -m ares.evaluation.audit_verify .ares-local-audit.jsonl
+```
+
+The command reports whether the supplied chain verifies. It cannot detect a
+complete file rollback or replacement without an external trusted anchor.
