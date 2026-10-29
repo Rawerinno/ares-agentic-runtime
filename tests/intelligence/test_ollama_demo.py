@@ -1,6 +1,7 @@
 """CLI smoke tests require neither Ollama nor internet access."""
 
 import json
+from typing import cast
 
 from _pytest.capture import CaptureFixture
 
@@ -14,7 +15,8 @@ def test_cli_critical(capsys: CaptureFixture[str]) -> None:
     assert output["proposal"] == "request_review"
     assert output["mode"] == "offline-reference"
     assert output["governed_proposal"] == "request_review"
-    assert output["evidence"][0]["source"] == "sensor"
+    evidence = cast("list[dict[str, object]]", output["evidence"])
+    assert evidence[0]["source"] == "sensor"
 
 
 def test_cli_normal(capsys: CaptureFixture[str]) -> None:
