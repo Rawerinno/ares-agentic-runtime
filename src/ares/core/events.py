@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from ares.core.errors import DomainError
-from ares.core.models import _require_text
+from ares.core.models import require_text
 
 
 class EventKind(StrEnum):
@@ -23,7 +23,7 @@ class Event:
     detail: str = ""
 
     def __post_init__(self) -> None:
-        _require_text(self.id, "event.id")
-        _require_text(self.task_id, "event.task_id")
-        if not isinstance(self.kind, EventKind):
+        require_text(self.id, "event.id")
+        require_text(self.task_id, "event.task_id")
+        if type(self.kind) is not EventKind:
             raise DomainError("event.kind must be an EventKind")
