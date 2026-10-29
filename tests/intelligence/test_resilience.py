@@ -20,7 +20,13 @@ class Stub:
 
 def test_valid_proposal_is_accepted() -> None:
     output = BoundedProposalEngine(
-        Stub({"kind": "observe", "rationale": "Continue observing", "assessment_severity": "normal"})
+        Stub(
+            {
+                "kind": "observe",
+                "rationale": "Continue observing",
+                "assessment_severity": "normal",
+            }
+        )
     ).evaluate(assessment())
     assert output.status is OutcomeStatus.ACCEPTED
     assert output.decision is not None
