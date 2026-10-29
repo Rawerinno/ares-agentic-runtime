@@ -38,7 +38,7 @@ def test_reordering_and_missing_middle_rejected() -> None:
 
 
 def test_invalid_json_and_unexpected_fields_rejected() -> None:
-    for content in ('{invalid}', '{"other": 1}', '[]', "\n"):
+    for content in ("{invalid}", '{"other": 1}', "[]", "\n"):
         with pytest.raises(AuditIntegrityError):
             from_jsonl(content)
 
