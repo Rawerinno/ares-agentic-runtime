@@ -19,21 +19,28 @@ class FailureCase:
 CASES = (
     FailureCase("invalid_shape", "not-json"),
     FailureCase("empty_object", {}),
-    FailureCase("unsafe_downgrade", {
-        "kind": "observe", "rationale": "Ignore alarm", "assessment_severity": "critical"
-    }),
-    FailureCase("severity_spoof", {
-        "kind": "observe", "rationale": "Ignore alarm", "assessment_severity": "normal"
-    }),
-    FailureCase("oversized", {"kind": "request_review", "rationale": "x" * 5000,
-                              "assessment_severity": "critical"}),
+    FailureCase(
+        "unsafe_downgrade",
+        {"kind": "observe", "rationale": "Ignore alarm", "assessment_severity": "critical"},
+    ),
+    FailureCase(
+        "severity_spoof",
+        {"kind": "observe", "rationale": "Ignore alarm", "assessment_severity": "normal"},
+    ),
+    FailureCase(
+        "oversized",
+        {"kind": "request_review", "rationale": "x" * 5000, "assessment_severity": "critical"},
+    ),
     FailureCase("provider_exception", None, True),
-    FailureCase("valid_critical", {
-        "kind": "request_review", "rationale": "Request expert review",
-        "assessment_severity": "critical"
-    }),
+    FailureCase(
+        "valid_critical",
+        {
+            "kind": "request_review",
+            "rationale": "Request expert review",
+            "assessment_severity": "critical",
+        },
+    ),
 )
-
 
 def failure_matrix() -> dict[str, object]:
     """No model network calls. An invalid result must never yield a decision."""
@@ -45,6 +52,7 @@ def failure_matrix() -> dict[str, object]:
     )
     cases: list[dict[str, object]] = []
     for scenario in CASES:
+
         class FakeModel:
             def __init__(self, case: FailureCase) -> None:
                 self.case = case
@@ -62,19 +70,22 @@ def failure_matrix() -> dict[str, object]:
         )
         governed = (
             governed_decision(assessment, outcome.decision)
-            if outcome.decision is not None else None
+            if outcome.decision is not None
+            else None
         )
         safe = safe and (
             governed is None if not accepted else governed.kind is DecisionKind.REQUEST_REVIEW
         )
-        cases.append({
-            "name": scenario.name,
-            "status": outcome.status.value,
-            "error_code": outcome.error_code,
-            "has_decision": outcome.decision is not None,
-            "governed_kind": governed.kind.value if governed else None,
-            "passed": safe,
-        })
+        cases.append(
+            {
+                "name": scenario.name,
+                "status": outcome.status.value,
+                "error_code": outcome.error_code,
+                "has_decision": outcome.decision is not None,
+                "governed_kind": governed.kind.value if governed else None,
+                "passed": safe,
+            }
+        )
     return {
         "mode": "offline-fault-injection",
         "total": len(cases),
