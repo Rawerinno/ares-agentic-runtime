@@ -22,7 +22,7 @@ from ares.integrations.acquisition_metrics import MonitoredAcquisition
 from ares.integrations.tcp_readonly import ReadOnlyTCPTransport
 
 # Replace only after endpoint review and hardware-entry approval.
-transport = ReadOnlyTCPTransport("192.0.2.1", 9000)
+transport = ReadOnlyTCPTransport("192.0.2.1", 9000, allow_remote=True)
 source = MonitoredAcquisition(
     BoundedAcquisition(transport.receive, timeout_s=1.0, expected_device_id="sensor-1")
 )
@@ -35,6 +35,10 @@ finally:
 ```
 
 Only numeric IPv4/IPv6 addresses are accepted; DNS and scoped IPv6 are rejected.
+By default **only loopback** addresses are allowed. Non-loopback unicast IPs
+require the explicit `allow_remote=True` opt-in at construction; this does
+not authenticate the peer or approve hardware use. Unspecified and multicast
+addresses are always rejected. Construction does not open a socket.
 No hostname resolver can therefore block outside the socket deadline. The caller
 must serialize `receive`, `stats`, and `close`, and always close in `finally`.
 

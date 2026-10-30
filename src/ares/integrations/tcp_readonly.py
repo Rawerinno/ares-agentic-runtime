@@ -38,10 +38,17 @@ class ReadOnlyTCPTransport:
         *,
         max_connection_attempts: int = 1,
         reconnect_delay_s: float = 1.0,
+        allow_remote: bool = False,
     ) -> None:
         ip = ipaddress.ip_address(address)
         if "%" in address:
             raise ValueError("scoped addresses are not supported")
+        if type(allow_remote) is not bool:
+            raise ValueError("allow_remote must be a boolean")
+        if ip.is_unspecified or ip.is_multicast:
+            raise ValueError("unspecified and multicast addresses are forbidden")
+        if not ip.is_loopback and not allow_remote:
+            raise ValueError("remote addresses require allow_remote=True")
         if type(port) is not int or not 1 <= port <= 65535:
             raise ValueError("port must be an integer in 1..65535")
         if type(max_connection_attempts) is not int or not 1 <= max_connection_attempts <= 100:
