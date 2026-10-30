@@ -97,3 +97,20 @@ def test_prompt_calibrates_normal_and_warning() -> None:
         request = json.loads(transport.payload)
         assert f"Authoritative recommendation kind: {expected}" in request["prompt"]
         assert "normal -> observe, warning -> investigate" in request["prompt"]
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b'{"response": "not-json"}',
+        b'{"response": "[]"}',
+        b'{"response": "{\\"kind\\": \\"observe\\"}"}',
+        b'{"response": null}',
+    ],
+)
+def test_malformed_model_content_fails_without_decision(content: bytes) -> None:
+    from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus
+
+    outcome = BoundedProposalEngine(make_adapter(FakeTransport(content))).evaluate(assessment())
+    assert outcome.status is OutcomeStatus.MODEL_ERROR or outcome.status is OutcomeStatus.REJECTED
+    assert outcome.decision is None
