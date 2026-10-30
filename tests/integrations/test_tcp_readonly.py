@@ -372,3 +372,25 @@ def test_expected_identity_survives_reconnect_before_any_accepted_sample() -> No
             assert transport.stats().connections == 2
         finally:
             transport.close()
+
+
+@pytest.mark.parametrize("address", ["192.0.2.1", "2001:db8::1", "169.254.1.1"])
+def test_remote_network_requires_explicit_opt_in(address: str) -> None:
+    with patch("ares.integrations.tcp_readonly.socket.socket") as factory:
+        with pytest.raises(ValueError, match="allow_remote"):
+            ReadOnlyTCPTransport(address, 1234)
+        transport = ReadOnlyTCPTransport(address, 1234, allow_remote=True)
+        assert transport.stats().connection_attempts == 0
+        transport.close()
+        factory.assert_not_called()
+
+
+@pytest.mark.parametrize("address", ["0.0.0.0", "::", "224.0.0.1", "ff02::1"])
+def test_non_unicast_destinations_are_always_rejected(address: str) -> None:
+    with pytest.raises(ValueError, match="forbidden"):
+        ReadOnlyTCPTransport(address, 1234, allow_remote=True)
+
+
+def test_remote_opt_in_must_be_boolean() -> None:
+    with pytest.raises(ValueError, match="allow_remote"):
+        ReadOnlyTCPTransport("127.0.0.1", 1234, allow_remote=1)  # type: ignore[arg-type]
