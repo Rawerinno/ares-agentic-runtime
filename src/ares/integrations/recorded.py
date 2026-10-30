@@ -92,7 +92,7 @@ class RecordedSensor:
             )
         except RecordingError:
             raise
-        except (UnicodeError, ValueError) as exc:
+        except (UnicodeError, ValueError, RecursionError) as exc:
             raise RecordingError("recording_invalid_json") from exc
         if not isinstance(value, list):
             raise RecordingError("recording_invalid_shape")
@@ -121,7 +121,10 @@ class RecordedSensor:
                 stamp = fields["timestamp_s"]
                 if type(stamp) not in (int, float):
                     raise RecordingError("recording_invalid_timestamps")
-                timestamps.append(float(cast("int | float", stamp)))
+                try:
+                    timestamps.append(float(cast("int | float", stamp)))
+                except OverflowError as exc:
+                    raise RecordingError("recording_invalid_timestamps") from exc
             device_id = fields["device_id"]
             step = fields["step"]
             temperature = fields["temperature_c"]
@@ -133,11 +136,15 @@ class RecordedSensor:
                 or type(healthy) is not bool
             ):
                 raise RecordingError("recording_invalid_types")
+            try:
+                value_c = float(cast("int | float", temperature))
+            except OverflowError as exc:
+                raise RecordingError("recording_invalid_types") from exc
             snapshots.append(
                 DeviceSnapshot(
                     device_id,
                     step,
-                    float(cast("int | float", temperature)),
+                    value_c,
                     healthy,
                 )
             )
