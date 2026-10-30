@@ -57,6 +57,9 @@ def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2
         "governed_correct": cases["governed_passed"],
         "raw_correct": cases["passed"],
         "model_errors": cases["model_error_count"],
+        "rejected_responses": cases["rejected_count"],
+        "latency_mean_ms": cases["latency_mean_ms"],
+        "latency_median_ms": cases["latency_median_ms"],
     }
 
 
