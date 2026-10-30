@@ -23,8 +23,13 @@ def phase5_acceptance() -> dict[str, object]:
         result = replay(path)
         cases = cast("list[dict[str, object]]", result["cases"])
         classifications = [case["severity"] for case in cases]
+        findings = cast("list[dict[str, object]]", result["findings"])
+        codes = [finding["code"] for finding in findings]
         checks = {
             "replay_all_steps": result["total"] == 4,
+            "jump_and_unhealthy_findings": codes.count("temperature_jump") == 3
+            and codes.count("sensor_unhealthy") == 1,
+            "no_unsupported_staleness_claim": result["staleness_assessed"] is False,
             "thresholds_and_unhealthy": classifications
             == ["normal", "warning", "critical", "critical"],
         }
