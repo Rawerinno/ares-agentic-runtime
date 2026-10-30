@@ -105,3 +105,22 @@ def test_socket_read_timeout_rejected() -> None:
         server.shutdown()
         worker.join(timeout=5)
         server.server_close()
+
+def test_elapsed_budget_rejects_slow_partial_response() -> None:
+    class SlowPartialHandler(Handler):
+        scenario: ClassVar[str] = "partial"
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), SlowPartialHandler)
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        port = server.server_address[1]
+        assert isinstance(port, int)
+        with pytest.raises(ProviderTransportError, match="deadline_exceeded|connection_failed"):
+            OllamaLocalTransport(port=port).request(
+                b"{}", limits=RequestLimits(timeout_seconds=0.1)
+            )
+    finally:
+        server.shutdown()
+        worker.join(timeout=5)
+        server.server_close()
