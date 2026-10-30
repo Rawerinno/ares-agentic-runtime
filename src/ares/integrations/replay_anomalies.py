@@ -27,7 +27,10 @@ def analyze_recording(
     for snapshot in snapshots:
         if not snapshot.healthy:
             findings.append(ReplayFinding(snapshot.step, "sensor_unhealthy"))
-        if previous is not None and abs(snapshot.temperature_c - previous.temperature_c) >= jump_threshold_c:
+        if (
+            previous is not None
+            and abs(snapshot.temperature_c - previous.temperature_c) >= jump_threshold_c
+        ):
             findings.append(ReplayFinding(snapshot.step, "temperature_jump"))
         previous = snapshot
     return tuple(findings)
