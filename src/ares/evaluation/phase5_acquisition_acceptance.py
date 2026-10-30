@@ -12,6 +12,9 @@ def acquisition_acceptance() -> dict[str, object]:
         TimeoutError(),
         b"{malformed",
         json.dumps(
+            {"device_id": "unexpected", "step": 0, "temperature_c": 24, "healthy": True}
+        ).encode(),
+        json.dumps(
             {"device_id": "fixture", "step": 0, "temperature_c": 24, "healthy": True}
         ).encode(),
         json.dumps(
@@ -25,23 +28,31 @@ def acquisition_acceptance() -> dict[str, object]:
             raise item
         return item
 
-    monitor = MonitoredAcquisition(BoundedAcquisition(receive, timeout_s=0.2))
-    results = [monitor.read() for _ in range(4)]
+    monitor = MonitoredAcquisition(
+        BoundedAcquisition(receive, timeout_s=0.2, expected_device_id="fixture")
+    )
+    results = [monitor.read() for _ in range(5)]
     stats = monitor.stats()
     checks = {
         "timeout_is_rejected": results[0].error_code == "acquisition_timeout",
         "malformed_is_rejected": results[1].error_code == "acquisition_invalid_json",
+        "unexpected_device_is_rejected": (
+            results[2].error_code == "acquisition_device_mismatch" and results[2].snapshot is None
+        ),
         "recovery_at_expected_sequence": (
-            results[2].snapshot is not None and results[2].snapshot.step == 0
+            results[3].snapshot is not None
+            and results[3].snapshot.step == 0
+            and results[3].snapshot.device_id == "fixture"
         ),
         "unhealthy_is_observed_not_masked": (
-            results[3].snapshot is not None and results[3].snapshot.healthy is False
+            results[4].snapshot is not None and results[4].snapshot.healthy is False
         ),
         "metrics_are_consistent": (
-            stats.attempts == 4
+            stats.attempts == 5
             and stats.successful == 2
-            and stats.failed == 2
-            and stats.max_consecutive_failures == 2
+            and stats.failed == 3
+            and stats.max_consecutive_failures == 3
+            and stats.error_counts.get("acquisition_device_mismatch") == 1
         ),
     }
     return {

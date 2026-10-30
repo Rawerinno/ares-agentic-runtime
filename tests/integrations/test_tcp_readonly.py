@@ -347,3 +347,28 @@ def test_socket_reset_discards_partial_frame_and_never_sends() -> None:
         factory.return_value.close.assert_called_once()
         factory.return_value.send.assert_not_called()
         factory.return_value.sendall.assert_not_called()
+
+
+def test_expected_identity_survives_reconnect_before_any_accepted_sample() -> None:
+    with peer(
+        sends(frame(0, "wrong") + b"\n"),
+        sends(frame(0, "other") + b"\n" + frame() + b"\n"),
+    ) as port:
+        transport = ReadOnlyTCPTransport(
+            "127.0.0.1", port, max_connection_attempts=2, reconnect_delay_s=0
+        )
+        source = MonitoredAcquisition(
+            BoundedAcquisition(transport.receive, expected_device_id="sensor-1")
+        )
+        try:
+            assert source.read().error_code == "acquisition_device_mismatch"
+            assert source.read().error_code == "acquisition_transport_error"
+            assert source.read().error_code == "acquisition_device_mismatch"
+            result = source.read()
+            assert result.snapshot is not None and result.snapshot.device_id == "sensor-1"
+            assert result.snapshot.step == 0
+            assert source.stats().successful == 1
+            assert source.stats().max_consecutive_failures == 3
+            assert transport.stats().connections == 2
+        finally:
+            transport.close()

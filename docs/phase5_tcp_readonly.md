@@ -23,7 +23,9 @@ from ares.integrations.tcp_readonly import ReadOnlyTCPTransport
 
 # Replace only after endpoint review and hardware-entry approval.
 transport = ReadOnlyTCPTransport("192.0.2.1", 9000)
-source = MonitoredAcquisition(BoundedAcquisition(transport.receive, timeout_s=1.0))
+source = MonitoredAcquisition(
+    BoundedAcquisition(transport.receive, timeout_s=1.0, expected_device_id="sensor-1")
+)
 try:
     result = source.read()
     acquisition_health = source.stats()
@@ -57,6 +59,10 @@ must serialize `receive`, `stats`, and `close`, and always close in `finally`.
   and expected step are never reset. Device changes, restarts at step zero, and
   gaps are rejected. No protocol request can ask the sender to retransmit, so a
   missed sample may require a separately reviewed new acquisition session.
+- Configure `expected_device_id` on the acquisition boundary to reject an
+  unexpected sender starting with the very first frame. Matching is exact;
+  identity mismatches return `acquisition_device_mismatch` and do not advance
+  sequence state. The configured identity survives transport reconnects.
 - JSON/schema rejection consumes a delimited frame but does not close the TCP
   connection or advance the acquisition sequence. Framing failures close it.
 
@@ -106,7 +112,13 @@ acknowledgments, and connection teardown still reach the endpoint and may affect
 its firmware. A reviewed endpoint must tolerate these operations.
 
 This transport is plaintext TCP without peer authentication. A numeric address
-and first-frame device ID are not proof of identity. Before any hardware use:
+and first-frame device ID are not proof of identity.
+
+The optional expected-device check detects configuration mistakes but cannot
+authenticate a sender: a peer can claim the same ID. If omitted, legacy behavior
+learns the ID from the first accepted sample and then requires it to stay stable.
+
+Before any hardware use:
 
 - Select an approved isolated endpoint, validate its push protocol and identity,
   and assess whether authenticated transport is required.
