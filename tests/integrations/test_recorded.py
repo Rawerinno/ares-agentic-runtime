@@ -92,8 +92,7 @@ def test_recorded_sensor_passes_through_authorized_gateway(tmp_path: Path) -> No
     ("payload", "error"),
     [
         (
-            '[{"device_id":"x","step":0,"step":1,'
-            '"temperature_c":20,"healthy":true}]',
+            '[{"device_id":"x","step":0,"step":1,"temperature_c":20,"healthy":true}]',
             "recording_duplicate_field",
         ),
         (
@@ -110,9 +109,7 @@ def test_recorded_sensor_passes_through_authorized_gateway(tmp_path: Path) -> No
         ),
     ],
 )
-def test_recording_rejects_ambiguous_json(
-    tmp_path: Path, payload: str, error: str
-) -> None:
+def test_recording_rejects_ambiguous_json(tmp_path: Path, payload: str, error: str) -> None:
     path = tmp_path / "ambiguous.json"
     path.write_text(payload, encoding="utf-8")
     with pytest.raises(RecordingError, match=error):
