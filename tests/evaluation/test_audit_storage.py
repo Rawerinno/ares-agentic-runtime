@@ -37,3 +37,33 @@ def test_demo_persists_only_when_requested(tmp_path: Path) -> None:
     assert len(read_audit(path)) == 2
     assert run(["--temperature", "20"]) == 0
     assert len(read_audit(path)) == 2
+
+
+def test_truncated_or_modified_history_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "audit.jsonl"
+    first = append_entry((), "one", {"severity": "normal"})
+    second = append_entry(first, "two", {"severity": "critical"})
+    extend_audit(path, (), first)
+    extend_audit(path, first, second)
+    original = path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    path.write_text(lines[1] + "\n", encoding="utf-8")
+    with pytest.raises(AuditIntegrityError):
+        read_audit(path)
+    path.write_text(original.replace('"critical"', '"normal"'), encoding="utf-8")
+    with pytest.raises(AuditIntegrityError):
+        read_audit(path)
+
+
+def test_selected_symlink_path_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "target.jsonl"
+    link = tmp_path / "link.jsonl"
+    path.write_text("", encoding="utf-8")
+    try:
+        link.symlink_to(path)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symbolic links not available on this system")
+    with pytest.raises(AuditIntegrityError, match="symlink"):
+        read_audit(link)
+    with pytest.raises(AuditIntegrityError, match="symlink"):
+        extend_audit(link, (), append_entry((), "event", {}))
