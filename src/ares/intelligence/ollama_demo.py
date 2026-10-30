@@ -44,7 +44,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     if args.live:
         limits = RequestLimits(timeout_seconds=30.0, max_response_bytes=16384)
         model = OllamaAdapter(
-            ProviderClient(PreemptiveOllamaTransport() if args.preemptive else OllamaLocalTransport(), limits),
+            ProviderClient(
+                PreemptiveOllamaTransport() if args.preemptive else OllamaLocalTransport(),
+                limits,
+            ),
             args.model,
         )
     else:
