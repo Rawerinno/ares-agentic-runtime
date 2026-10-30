@@ -47,3 +47,28 @@ def test_preemptive_transport_terminates_slow_request() -> None:
 def test_preemptive_transport_rejects_non_loopback() -> None:
     with pytest.raises(ValueError, match="loopback"):
         PreemptiveOllamaTransport(host="8.8.8.8")
+
+
+def test_preemptive_transport_accepts_fast_local_response() -> None:
+    class FastEndpoint(Endpoint):
+        def do_POST(self) -> None:
+            payload = b"ok"
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), FastEndpoint)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        port = server.server_address[1]
+        assert isinstance(port, int)
+        result = PreemptiveOllamaTransport(port=port).request(
+            b"{}", limits=RequestLimits(timeout_seconds=5.0)
+        )
+        assert result == b"ok"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
