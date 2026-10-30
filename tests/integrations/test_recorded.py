@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from ares.integrations import ReadOnlyToolGateway
 from ares.integrations.recorded import RecordedSensor, RecordingError
+from ares.safety import Capability, Policy
+from ares.supervisor import Severity, Supervisor
 
 
 def save(tmp_path: Path, events: object) -> Path:
@@ -72,3 +75,13 @@ def test_recording_rejects_symlink(tmp_path: Path) -> None:
         pytest.skip("Symlink unavailable")
     with pytest.raises(RecordingError, match="symlink"):
         RecordedSensor.from_file(link)
+
+
+def test_recorded_sensor_passes_through_authorized_gateway(tmp_path: Path) -> None:
+    sensor = RecordedSensor.from_file(save(tmp_path, sample()))
+    gateway = ReadOnlyToolGateway(Policy(frozenset({("supervisor", "recorded", Capability.READ)})))
+    gateway.register_sensor("recorded", sensor)
+    supervisor = Supervisor(gateway)
+    assert supervisor.assess(agent_id="supervisor", tool_id="recorded").severity is Severity.NORMAL
+    sensor.advance()
+    assert supervisor.assess(agent_id="supervisor", tool_id="recorded").severity is Severity.CRITICAL
