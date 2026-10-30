@@ -15,6 +15,7 @@ from ares.intelligence.diagnostics import build_diagnostic_report
 from ares.intelligence.hypotheses import suggested_checks
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
+from ares.intelligence.ollama_preemptive import PreemptiveOllamaTransport
 from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.resilience import BoundedProposalEngine
 from ares.intelligence.transport import ProviderClient, RequestLimits
@@ -28,6 +29,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--temperature", type=float, default=85.0)
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--live", action="store_true", help="Call local Ollama on loopback")
+    parser.add_argument("--preemptive", action="store_true", help="Use subprocess timeout")
     parser.add_argument("--audit-file", type=Path, help="Opt in to local JSONL audit storage")
     args = parser.parse_args(argv)
 
@@ -42,7 +44,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     if args.live:
         limits = RequestLimits(timeout_seconds=30.0, max_response_bytes=16384)
         model = OllamaAdapter(
-            ProviderClient(OllamaLocalTransport(), limits),
+            ProviderClient(PreemptiveOllamaTransport() if args.preemptive else OllamaLocalTransport(), limits),
             args.model,
         )
     else:
