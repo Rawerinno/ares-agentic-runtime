@@ -106,6 +106,7 @@ def test_socket_read_timeout_rejected() -> None:
         worker.join(timeout=5)
         server.server_close()
 
+
 def test_elapsed_budget_rejects_slow_partial_response() -> None:
     class SlowPartialHandler(Handler):
         scenario: ClassVar[str] = "partial"
