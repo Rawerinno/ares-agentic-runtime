@@ -116,7 +116,7 @@ def test_elapsed_budget_rejects_slow_partial_response() -> None:
     try:
         port = server.server_address[1]
         assert isinstance(port, int)
-        with pytest.raises(ProviderTransportError, match="deadline_exceeded|connection_failed"):
+        with pytest.raises(ProviderTransportError, match=r"deadline_exceeded|connection_failed"):
             OllamaLocalTransport(port=port).request(
                 b"{}", limits=RequestLimits(timeout_seconds=0.1)
             )
