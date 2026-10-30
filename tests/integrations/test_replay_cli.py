@@ -25,9 +25,7 @@ def test_replay_classifies_all_recorded_steps(tmp_path: Path) -> None:
     result = replay(path)
     assert result["total"] == 4
     cases = cast("list[dict[str, object]]", result["cases"])
-    assert [case["severity"] for case in cases] == [
-        "normal", "warning", "critical", "critical"
-    ]
+    assert [case["severity"] for case in cases] == ["normal", "warning", "critical", "critical"]
 
 
 def test_replay_rejects_bad_file(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
