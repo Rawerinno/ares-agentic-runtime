@@ -5,8 +5,8 @@ Intended for a single trusted local operator, not a multi-user audit service.
 
 import os
 import tempfile
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from ares.evaluation.audit import AuditEntry, AuditIntegrityError, from_jsonl, to_jsonl
