@@ -4,6 +4,8 @@ import json
 from typing import cast
 from unittest.mock import patch
 
+from pytest import CaptureFixture
+
 from ares.evaluation.phase5_offline_readiness import offline_readiness, run
 
 
@@ -20,20 +22,14 @@ def test_offline_readiness_gates() -> None:
     json.dumps(report, allow_nan=False)
 
 
-def test_readiness_cli_emits_json_and_exit_code(capsys: object) -> None:
-    from _pytest.capture import CaptureFixture
-
-    capture = cast("CaptureFixture[str]", capsys)
+def test_readiness_cli_emits_json_and_exit_code(capsys: CaptureFixture[str]) -> None:
     assert run([]) == 0
-    report = json.loads(capture.readouterr().out)
+    report = json.loads(capsys.readouterr().out)
     assert report["mode"] == "offline-readiness"
     assert report["passed"] == report["total"] == 6
 
 
-def test_failed_gate_causes_nonzero_exit(capsys: object) -> None:
-    from _pytest.capture import CaptureFixture
-
-    capture = cast("CaptureFixture[str]", capsys)
+def test_failed_gate_causes_nonzero_exit(capsys: CaptureFixture[str]) -> None:
     with patch(
         "ares.evaluation.phase5_offline_readiness.phase5_acceptance",
         return_value={
