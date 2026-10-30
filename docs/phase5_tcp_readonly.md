@@ -87,6 +87,12 @@ layer infers sensor health from connection success.
    invalid settings perform no connection attempt.
 6. Acquisition and transport counters distinguish accepted samples, transport
    failures, policy blocks, and framing errors; snapshots remain independent.
+7. A partial-frame timeout recovers on a new connection without replaying bytes;
+   successful recovery clears the failure streak and last transport error.
+8. A deterministic clock verifies reconnection exactly at cooldown expiry and
+   rejects an already-buffered frame after its call deadline expires.
+9. Repeated reads after budget exhaustion never create new sockets, and an
+   injected connection reset discards partial data without application writes.
 
 The repository CI runs these with the complete suite, strict types, lint,
 formatting, coverage >=90%, and package build on Windows and Ubuntu.
