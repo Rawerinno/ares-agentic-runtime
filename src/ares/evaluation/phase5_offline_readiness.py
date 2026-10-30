@@ -33,8 +33,7 @@ def offline_readiness() -> dict[str, object]:
             and acquisition_report["acceptance_ratio"] is None
         ),
         "diagnostic_no_unproved_claims": (
-            len(evidence) == 4
-            and all(value == "not_assessed" for value in evidence.values())
+            len(evidence) == 4 and all(value == "not_assessed" for value in evidence.values())
         ),
         "no_transport_connections": transport.stats().connection_attempts == 0,
         "no_hardware_or_actuation_claims": (
