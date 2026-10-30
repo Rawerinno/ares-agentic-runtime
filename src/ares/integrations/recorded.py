@@ -13,7 +13,7 @@ class RecordingError(ValueError):
     """A recorded telemetry file is malformed or unsafe to replay."""
 
 
-def _unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+def unique_json_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
     """Reject duplicate JSON keys instead of silently accepting the last value."""
     result: dict[str, object] = {}
     for key, value in pairs:
@@ -23,7 +23,7 @@ def _unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def _reject_nonfinite_constant(value: str) -> object:
+def reject_nonfinite_json_constant(value: str) -> object:
     """Python's JSON decoder otherwise accepts non-standard NaN/Infinity tokens."""
     raise RecordingError("recording_invalid_number")
 
@@ -87,8 +87,8 @@ class RecordedSensor:
         try:
             value: object = json.loads(
                 path.read_text(encoding="utf-8"),
-                object_pairs_hook=_unique_fields,
-                parse_constant=_reject_nonfinite_constant,
+                object_pairs_hook=unique_json_fields,
+                parse_constant=reject_nonfinite_json_constant,
             )
         except RecordingError:
             raise
