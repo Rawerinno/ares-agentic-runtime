@@ -5,6 +5,7 @@ Only a trusted registered simulator can be called through this gateway.
 """
 
 from dataclasses import dataclass
+from typing import Protocol
 
 from ares.safety import (
     AuthorizationDecision,
@@ -14,7 +15,7 @@ from ares.safety import (
     RiskLevel,
     ToolRequest,
 )
-from ares.simulation import DeviceSimulator, DeviceSnapshot
+from ares.simulation import DeviceSnapshot
 
 
 class ToolNotFoundError(LookupError):
@@ -29,6 +30,12 @@ class SensorReadResult:
     snapshot: DeviceSnapshot
 
 
+class ReadableSensor(Protocol):
+    """Read-only sensor contract; no actuation capabilities."""
+
+    def read(self) -> DeviceSnapshot: ...
+
+
 class ReadOnlyToolGateway:
     """Enforce authorization before dispatching an explicitly registered read.
 
@@ -38,9 +45,9 @@ class ReadOnlyToolGateway:
 
     def __init__(self, policy: Policy) -> None:
         self._policy = policy
-        self._sensors: dict[str, DeviceSimulator] = {}
+        self._sensors: dict[str, ReadableSensor] = {}
 
-    def register_sensor(self, tool_id: str, sensor: DeviceSimulator) -> None:
+    def register_sensor(self, tool_id: str, sensor: ReadableSensor) -> None:
         if not tool_id.strip():
             raise ValueError("tool_id must not be blank")
         if tool_id in self._sensors:
