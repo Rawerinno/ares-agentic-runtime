@@ -3,9 +3,9 @@
 import argparse
 import json
 from collections.abc import Sequence
-from ares.evaluation.phase4_acceptance import phase4_acceptance
-from ares.evaluation.ollama_benchmark import benchmark
 
+from ares.evaluation.ollama_benchmark import benchmark
+from ares.evaluation.phase4_acceptance import phase4_acceptance
 
 Report = dict[str, object]
 
