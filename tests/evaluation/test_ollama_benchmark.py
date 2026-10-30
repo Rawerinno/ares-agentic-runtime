@@ -31,3 +31,23 @@ def test_normal_scenario_requires_observe() -> None:
     assert cases[0]["expected_proposal"] == "observe"
     assert cases[2]["expected_proposal"] == "investigate"
     assert cases[4]["expected_proposal"] == "request_review"
+
+
+def test_repeated_benchmark_isolated_cases() -> None:
+    report = benchmark(repeats=3)
+    assert report["total"] == 18
+    assert report["passed"] == 18
+    assert report["governed_passed"] == 18
+    assert report["repeats"] == 3
+    assert report["model_error_count"] == 0
+    cases = cast("list[dict[str, object]]", report["cases"])
+    assert [case["repeat"] for case in cases] == [1] * 6 + [2] * 6 + [3] * 6
+
+
+def test_repeats_validation() -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="repeats"):
+        benchmark(repeats=0)
+    with pytest.raises(ValueError, match="repeats"):
+        benchmark(repeats=21)
