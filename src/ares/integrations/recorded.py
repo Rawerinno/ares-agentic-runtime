@@ -79,5 +79,10 @@ class RecordedSensor:
                 or type(healthy) is not bool
             ):
                 raise RecordingError("recording_invalid_types")
-            snapshots.append(DeviceSnapshot(device_id, step, float(temperature), healthy))
+            snapshots.append(DeviceSnapshot(
+                    cast("str", device_id),
+                    cast("int", step),
+                    float(cast("int | float", temperature)),
+                    cast("bool", healthy),
+                ))
         return cls(tuple(snapshots))
