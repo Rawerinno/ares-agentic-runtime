@@ -46,12 +46,15 @@ def failure_matrix() -> dict[str, object]:
     cases: list[dict[str, object]] = []
     for scenario in CASES:
         class FakeModel:
-            def propose(self, assessment: Assessment) -> object:
-                if scenario.raises:
-                    raise ConnectionError("private provider details")
-                return scenario.raw
+            def __init__(self, case: FailureCase) -> None:
+                self.case = case
 
-        adapter: ModelAdapter = FakeModel()
+            def propose(self, assessment: Assessment) -> object:
+                if self.case.raises:
+                    raise ConnectionError("private provider details")
+                return self.case.raw
+
+        adapter: ModelAdapter = FakeModel(scenario)
         outcome = BoundedProposalEngine(adapter).evaluate(assessment)
         accepted = outcome.status is OutcomeStatus.ACCEPTED
         safe = (accepted == (scenario.name == "valid_critical")) and (
