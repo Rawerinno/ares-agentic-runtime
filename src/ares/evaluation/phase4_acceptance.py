@@ -40,8 +40,7 @@ def phase4_acceptance() -> dict[str, object]:
         "passed": sum(gate.passed for gate in gates),
         "total": len(gates),
         "gates": [
-            {"name": gate.name, "passed": gate.passed, "detail": gate.detail}
-            for gate in gates
+            {"name": gate.name, "passed": gate.passed, "detail": gate.detail} for gate in gates
         ],
         "live_validation_required": True,
         "hardware_safety_certified": False,
