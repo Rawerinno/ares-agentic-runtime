@@ -11,6 +11,7 @@ from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.degraded import govern_outcome
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
+from ares.intelligence.ollama_preemptive import PreemptiveOllamaTransport
 from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus
 from ares.intelligence.transport import ProviderClient, RequestLimits
@@ -37,14 +38,15 @@ SCENARIOS = (
 
 
 def benchmark(
-    *, live: bool = False, model: str = "llama3.2:3b", repeats: int = 1
+    *, live: bool = False, model: str = "llama3.2:3b", repeats: int = 1, preemptive: bool = False
 ) -> dict[str, object]:
     """Run fixed, independent observations, recording each proposal outcome."""
     if not 1 <= repeats <= 20:
         raise ValueError("repeats must be between 1 and 20")
     if live:
         limits = RequestLimits(timeout_seconds=30, max_response_bytes=16384)
-        adapter = OllamaAdapter(ProviderClient(OllamaLocalTransport(), limits), model)
+        transport = PreemptiveOllamaTransport() if preemptive else OllamaLocalTransport()
+        adapter = OllamaAdapter(ProviderClient(transport, limits), model)
     else:
         adapter = LocalReferenceModel()
     engine = BoundedProposalEngine(adapter)
@@ -108,10 +110,13 @@ def benchmark(
 def run(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ARES model proposal evaluation")
     parser.add_argument("--live", action="store_true", help="Query local Ollama")
+    parser.add_argument("--preemptive", action="store_true", help="Use subprocess timeout")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--repeats", type=int, default=1, help="Cycles per scenario (1-20)")
     args = parser.parse_args(argv)
-    report = benchmark(live=args.live, model=args.model, repeats=args.repeats)
+    report = benchmark(
+        live=args.live, model=args.model, repeats=args.repeats, preemptive=args.preemptive
+    )
     print(json.dumps(report, indent=2))
     return 0 if report["passed"] == report["total"] else 1
 
