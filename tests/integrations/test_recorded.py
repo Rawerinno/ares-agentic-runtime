@@ -84,7 +84,5 @@ def test_recorded_sensor_passes_through_authorized_gateway(tmp_path: Path) -> No
     supervisor = Supervisor(gateway)
     assert supervisor.assess(agent_id="supervisor", tool_id="recorded").severity is Severity.NORMAL
     sensor.advance()
-    assert (
-        supervisor.assess(agent_id="supervisor", tool_id="recorded").severity
-        is Severity.CRITICAL
-    )
+    second = supervisor.assess(agent_id="supervisor", tool_id="recorded")
+    assert second.severity is Severity.CRITICAL
