@@ -1,6 +1,7 @@
 """Local-only Ollama transport with bounded reads and a real socket timeout."""
 
 import ipaddress
+from time import monotonic
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPHandler, HTTPRedirectHandler, Request, build_opener
 
@@ -33,9 +34,10 @@ class OllamaLocalTransport:
     def request(self, payload: bytes, *, limits: RequestLimits) -> bytes:
         """Apply socket timeout and enforce a cap while reading response bytes.
 
-        urllib's timeout is a socket-operation timeout, not an absolute
-        end-to-end deadline; use only with trusted local Ollama processes.
+        The monotonic budget is checked between reads and on completion.
+        A blocking urllib read may overrun it; this is not a hard deadline.
         """
+        deadline = monotonic() + limits.timeout_seconds
         req = Request(
             self._url,
             data=payload,
@@ -46,7 +48,19 @@ class OllamaLocalTransport:
             with self._opener.open(req, timeout=limits.timeout_seconds) as response:
                 if response.status != 200:
                     raise ProviderTransportError("ollama_http_error")
-                content = response.read(limits.max_response_bytes + 1)
+                chunks: list[bytes] = []
+                remaining = limits.max_response_bytes + 1
+                while remaining > 0:
+                    if monotonic() >= deadline:
+                        raise ProviderTransportError("ollama_deadline_exceeded")
+                    piece = response.read(min(remaining, 4096))
+                    if not piece:
+                        break
+                    chunks.append(piece)
+                    remaining -= len(piece)
+                content = b"".join(chunks)
+                if monotonic() >= deadline:
+                    raise ProviderTransportError("ollama_deadline_exceeded")
         except (HTTPError, URLError, TimeoutError, OSError) as exc:
             raise ProviderTransportError("ollama_connection_failed") from exc
         if len(content) > limits.max_response_bytes:
