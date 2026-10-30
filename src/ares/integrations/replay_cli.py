@@ -8,6 +8,7 @@ from pathlib import Path
 from ares.integrations import ReadOnlyToolGateway
 from ares.integrations.recorded import RecordedSensor, RecordingError
 from ares.integrations.replay_anomalies import analyze_recording
+from ares.integrations.replay_timing import TimedReading, analyze_timing
 from ares.safety import Capability, Policy
 from ares.simulation import DeviceSnapshot
 from ares.supervisor import Supervisor
@@ -42,11 +43,23 @@ def replay(path: Path) -> dict[str, object]:
                 raise
             break
     findings = analyze_recording(tuple(snapshots))
+    timed_findings = (
+        analyze_timing(
+            tuple(
+                TimedReading(index, timestamp)
+                for index, timestamp in enumerate(sensor.timestamps_s)
+            ),
+            max_gap_s=1.0,
+        )
+        if sensor.timestamps_s
+        else ()
+    )
     return {
         "mode": "recorded-read-only",
         "total": len(cases),
         "cases": cases,
-        "findings": [{"step": f.step, "code": f.code} for f in findings],
+        "findings": [{"step": f.step, "code": f.code} for f in (*findings, *timed_findings)],
+        "timestamps_present": bool(sensor.timestamps_s),
         "staleness_assessed": False,
     }
 

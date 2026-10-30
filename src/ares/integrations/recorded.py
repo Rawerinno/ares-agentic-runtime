@@ -5,6 +5,7 @@ from math import isfinite
 from pathlib import Path
 from typing import cast
 
+from ares.integrations.replay_timing import TimedReading, analyze_timing
 from ares.simulation import DeviceSnapshot
 
 
@@ -33,7 +34,9 @@ class RecordedSensor:
     No network access, device discovery or actuation is provided.
     """
 
-    def __init__(self, snapshots: tuple[DeviceSnapshot, ...]) -> None:
+    def __init__(
+        self, snapshots: tuple[DeviceSnapshot, ...], *, timestamps_s: tuple[float, ...] = ()
+    ) -> None:
         if not snapshots:
             raise RecordingError("recording_empty")
         if len(snapshots) > 10000:
@@ -47,6 +50,20 @@ class RecordedSensor:
                 or not isfinite(snapshot.temperature_c)
             ):
                 raise RecordingError("recording_invalid_sequence")
+        if timestamps_s:
+            if len(timestamps_s) != len(snapshots):
+                raise RecordingError("recording_invalid_timestamps")
+            try:
+                analyze_timing(
+                    tuple(
+                        TimedReading(index, timestamp)
+                        for index, timestamp in enumerate(timestamps_s)
+                    ),
+                    max_gap_s=1.0,
+                )
+            except ValueError as exc:
+                raise RecordingError("recording_invalid_timestamps") from exc
+        self.timestamps_s = timestamps_s
         self._snapshots = snapshots
         self._offset = 0
 
@@ -83,12 +100,28 @@ class RecordedSensor:
         if not 1 <= len(items) <= 10000:
             raise RecordingError("recording_invalid_count")
         snapshots: list[DeviceSnapshot] = []
+        timestamps: list[float] = []
+        timestamped: bool | None = None
         for item in items:
             if not isinstance(item, dict):
                 raise RecordingError("recording_invalid_entry")
             fields = cast("dict[str, object]", item)
-            if set(fields) != {"device_id", "step", "temperature_c", "healthy"}:
+            keys = set(fields)
+            has_timestamp = "timestamp_s" in keys
+            if keys not in (
+                {"device_id", "step", "temperature_c", "healthy"},
+                {"device_id", "step", "temperature_c", "healthy", "timestamp_s"},
+            ):
                 raise RecordingError("recording_invalid_fields")
+            if timestamped is None:
+                timestamped = has_timestamp
+            elif timestamped != has_timestamp:
+                raise RecordingError("recording_inconsistent_timestamps")
+            if has_timestamp:
+                stamp = fields["timestamp_s"]
+                if type(stamp) not in (int, float):
+                    raise RecordingError("recording_invalid_timestamps")
+                timestamps.append(float(cast("int | float", stamp)))
             device_id = fields["device_id"]
             step = fields["step"]
             temperature = fields["temperature_c"]
@@ -108,4 +141,4 @@ class RecordedSensor:
                     healthy,
                 )
             )
-        return cls(tuple(snapshots))
+        return cls(tuple(snapshots), timestamps_s=tuple(timestamps))
