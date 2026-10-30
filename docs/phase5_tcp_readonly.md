@@ -77,6 +77,46 @@ endpoint, credentials, or unbounded error history. `MonitoredAcquisition` adds
 accepted samples, rejection categories, and failure streaks. Neither metric
 layer infers sensor health from connection success.
 
+### Combined diagnostic snapshot
+
+`acquisition_diagnostics(acquisition_stats, transport_stats=None)` produces a
+JSON-serializable report from existing counters. It performs no I/O, reads no
+sensor samples, does not retry, and does not issue commands. Pause acquisition
+while capturing the two snapshots, and use snapshots from the same session:
+
+```python
+from ares.integrations.acquisition_diagnostics import acquisition_diagnostics
+
+report = acquisition_diagnostics(source.stats(), transport.stats())
+```
+
+The version-1 report contains:
+
+- `acquisition.state`: `not_started`, `last_read_failed`, or `last_read_accepted`.
+  These describe the last acquisition attempt, not current sensor health.
+- `acquisition.counters`: a separate copy of the acquisition counters and error
+  categories. Recovery clears the current streak but preserves historical errors.
+- `acquisition.acceptance_ratio`: successful/attempted reads; `null` before any
+  attempt. This is a session ratio, not a time-window rate or uptime estimate.
+- `transport`: optional transport counters and `socket_state` (`socket_open`,
+  `disconnected`, `closed`). An open local socket is not proof of peer liveness.
+- `transport.last_error_observed`: the historical last error category, with
+  `retry_eligibility: not_assessed`. A stored cooldown error may outlive its
+  cooldown; the transport remains responsible for enforcing connection policy.
+- `evidence_limits`: sensor health, sample freshness, peer authentication, and
+  hardware validation are all explicitly `not_assessed`.
+
+Transport and acquisition counters overlap: a single socket timeout can appear
+in both. They are deliberately not summed into a misleading failure total.
+The report contains no sample payload, endpoint address, or device ID. It does
+not attest that other runtime components have actuation disabled. This API only
+describes caller-supplied snapshots; it does not authenticate their provenance.
+
+Offline tests cover not-started sessions, failure/recovery history, unhealthy
+but schema-valid samples, mismatched device IDs on an open socket, explicit
+close, historical policy errors, snapshot isolation, JSON serialization, and
+report generation without network or acquisition I/O.
+
 ## Offline acceptance criteria
 
 `uv run --frozen pytest tests/integrations/test_tcp_readonly.py --no-cov` checks:
