@@ -6,10 +6,9 @@ from typing import cast
 from _pytest.capture import CaptureFixture
 from pytest import MonkeyPatch
 
+from ares.evaluation.ollama_benchmark import SCENARIOS, benchmark, run
 from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus, ProposalOutcome
 from ares.supervisor import Assessment
-
-from ares.evaluation.ollama_benchmark import SCENARIOS, benchmark, run
 
 
 def test_reference_model_passes_all_scenarios() -> None:
