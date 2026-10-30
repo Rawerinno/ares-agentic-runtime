@@ -7,7 +7,10 @@ from ares.evaluation.phase4_acceptance import phase4_acceptance
 from ares.evaluation.ollama_benchmark import benchmark
 
 
-def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2) -> dict[str, object]:
+Report = dict[str, object]
+
+
+def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2) -> Report:
     gates = phase4_acceptance()
     cases = benchmark(live=live, model=model, repeats=repeats)
     checks = {
