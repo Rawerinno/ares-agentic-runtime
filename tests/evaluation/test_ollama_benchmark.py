@@ -4,6 +4,10 @@ import json
 from typing import cast
 
 from _pytest.capture import CaptureFixture
+from pytest import MonkeyPatch
+
+from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus, ProposalOutcome
+from ares.supervisor import Assessment
 
 from ares.evaluation.ollama_benchmark import SCENARIOS, benchmark, run
 
@@ -51,3 +55,16 @@ def test_repeats_validation() -> None:
         benchmark(repeats=0)
     with pytest.raises(ValueError, match="repeats"):
         benchmark(repeats=21)
+
+
+def test_model_errors_still_count_governed_fallback(monkeypatch: MonkeyPatch) -> None:
+    def fail(self: BoundedProposalEngine, assessment: Assessment) -> ProposalOutcome:
+        return ProposalOutcome(OutcomeStatus.MODEL_ERROR, None, "model_exception", 2.0)
+
+    monkeypatch.setattr(BoundedProposalEngine, "evaluate", fail)
+    report = benchmark()
+    assert report["passed"] == 0
+    assert report["governed_passed"] == 6
+    assert report["model_error_count"] == 6
+    cases = cast("list[dict[str, object]]", report["cases"])
+    assert all(case["governance_mode"] == "deterministic_degraded" for case in cases)
