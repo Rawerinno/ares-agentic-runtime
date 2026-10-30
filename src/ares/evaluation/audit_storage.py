@@ -12,6 +12,8 @@ from ares.evaluation.audit import AuditEntry, AuditIntegrityError, from_jsonl, t
 
 def read_audit(path: Path) -> tuple[AuditEntry, ...]:
     """Reject malformed stored chains; missing file means no prior events."""
+    if path.is_symlink():
+        raise AuditIntegrityError("audit_symlink_forbidden")
     if not path.exists():
         return ()
     return from_jsonl(path.read_text(encoding="utf-8"))
@@ -23,6 +25,8 @@ def save_audit(path: Path, entries: tuple[AuditEntry, ...]) -> None:
     This does NOT prevent concurrent writers, tail truncation, rollback,
     replacement of the whole chain, or writes through untrusted symlinks.
     """
+    if path.is_symlink():
+        raise AuditIntegrityError("audit_symlink_forbidden")
     content = to_jsonl(entries)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=".ares-audit-", dir=path.parent)
