@@ -13,3 +13,7 @@ def test_offline_batch() -> None:
     assert checks["audit_two_event_roundtrip"] is True
     assert checks["mocked_degraded_fallback"] is True
     assert report["governed_correct"] == 12
+    assert report["model_errors"] == 0
+    assert report["rejected_responses"] == 0
+    assert isinstance(report["latency_mean_ms"], float)
+    assert isinstance(report["latency_median_ms"], float)
