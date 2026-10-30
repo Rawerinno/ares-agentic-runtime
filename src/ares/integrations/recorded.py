@@ -119,7 +119,6 @@ class RecordedSensor:
                 if type(stamp) not in (int, float):
                     raise RecordingError("recording_invalid_timestamps")
                 timestamps.append(float(cast("int | float", stamp)))
-                raise RecordingError("recording_invalid_fields")
             device_id = fields["device_id"]
             step = fields["step"]
             temperature = fields["temperature_c"]
