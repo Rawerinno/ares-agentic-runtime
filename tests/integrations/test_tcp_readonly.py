@@ -248,3 +248,102 @@ def test_expired_deadline_rejected_before_socket_connect() -> None:
             transport.receive(1)
         factory.return_value.connect.assert_not_called()
         factory.return_value.close.assert_called_once()
+
+
+def test_partial_timeout_reconnect_recovers_without_replaying_bytes() -> None:
+    def stalls(connection: socket.socket) -> None:
+        connection.sendall(frame()[:10])
+        assert connection.recv(1) == b""
+
+    with peer(stalls, sends(frame() + b"\n")) as port:
+        transport = ReadOnlyTCPTransport(
+            "127.0.0.1", port, max_connection_attempts=2, reconnect_delay_s=0
+        )
+        source = MonitoredAcquisition(BoundedAcquisition(transport.receive, timeout_s=0.3))
+        try:
+            assert source.read().error_code == "acquisition_timeout"
+            assert transport.stats().bytes_received == 10
+            result = source.read()
+            assert result.snapshot is not None and result.snapshot.step == 0
+            assert source.stats().consecutive_failures == 0
+            assert source.stats().error_counts == {"acquisition_timeout": 1}
+            stats = transport.stats()
+            assert stats.connection_attempts == stats.connections == 2
+            assert stats.timeouts == 1 and stats.frames == 1
+            assert stats.last_error is None
+        finally:
+            transport.close()
+
+
+def test_cooldown_expiry_allows_exactly_one_new_attempt() -> None:
+    with (
+        patch("ares.integrations.tcp_readonly.socket.socket") as factory,
+        patch("ares.integrations.tcp_readonly.monotonic", return_value=10.0) as clock,
+    ):
+        transport = ReadOnlyTCPTransport(
+            "127.0.0.1", 1234, max_connection_attempts=2, reconnect_delay_s=2
+        )
+        factory.return_value.connect.side_effect = OSError("offline")
+        with pytest.raises(OSError, match="offline"):
+            transport.receive(1)
+        clock.return_value = 11.999
+        with pytest.raises(OSError, match="cooldown"):
+            transport.receive(1)
+        assert factory.call_count == 1
+        clock.return_value = 12.0
+        factory.return_value.connect.side_effect = None
+        factory.return_value.recv.return_value = b"ok\n"
+        assert transport.receive(1) == b"ok"
+        assert factory.call_count == 2
+        assert transport.stats().connection_attempts == 2
+        assert transport.stats().last_error is None
+        transport.close()
+
+
+def test_expired_deadline_does_not_return_a_buffered_frame() -> None:
+    with (
+        patch("ares.integrations.tcp_readonly.socket.socket") as factory,
+        patch("ares.integrations.tcp_readonly.monotonic", return_value=10.0) as clock,
+    ):
+        factory.return_value.recv.return_value = b"first\nsecond\n"
+        transport = ReadOnlyTCPTransport("127.0.0.1", 1234)
+        assert transport.receive(1) == b"first"
+        clock.side_effect = [10.0, 11.0, 11.0]
+        with pytest.raises(TimeoutError):
+            transport.receive(0.5)
+        assert transport.stats().frames == 1
+        assert transport.stats().timeouts == 1
+        assert not transport.stats().connected
+        factory.return_value.recv.assert_called_once()
+        factory.return_value.close.assert_called_once()
+
+
+def test_repeated_calls_after_exhaustion_never_open_more_sockets() -> None:
+    with patch("ares.integrations.tcp_readonly.socket.socket") as factory:
+        factory.return_value.connect.side_effect = OSError("offline")
+        transport = ReadOnlyTCPTransport("127.0.0.1", 1234)
+        with pytest.raises(OSError, match="offline"):
+            transport.receive(1)
+        for _ in range(100):
+            with pytest.raises(OSError, match="budget"):
+                transport.receive(1)
+        assert factory.call_count == 1
+        stats = transport.stats()
+        assert stats.connection_attempts == 1
+        assert stats.policy_rejections == 100
+        assert stats.transport_errors == 1
+
+
+def test_socket_reset_discards_partial_frame_and_never_sends() -> None:
+    with patch("ares.integrations.tcp_readonly.socket.socket") as factory:
+        factory.return_value.recv.side_effect = [b"partial", ConnectionResetError("reset")]
+        transport = ReadOnlyTCPTransport("127.0.0.1", 1234)
+        assert BoundedAcquisition(transport.receive).read().error_code == (
+            "acquisition_transport_error"
+        )
+        assert transport.stats().bytes_received == 7
+        assert transport.stats().frames == 0
+        assert not transport.stats().connected
+        factory.return_value.close.assert_called_once()
+        factory.return_value.send.assert_not_called()
+        factory.return_value.sendall.assert_not_called()
