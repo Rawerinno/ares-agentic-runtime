@@ -68,7 +68,9 @@ def test_local_http_fail_closed(scenario: str, expected: str | None) -> None:
         assert isinstance(port, int)
         transport = OllamaLocalTransport(port=port)
         if expected is None:
-            assert transport.request(b"{}", limits=RequestLimits(max_response_bytes=64)) == b"ok"
+            assert transport.request(b"{}", limits=RequestLimits(max_response_bytes=64)) == (
+                b"partial" if scenario == "partial" else b"ok"
+            )
         else:
             with pytest.raises(ProviderTransportError, match=expected):
                 transport.request(b"{}", limits=RequestLimits(max_response_bytes=64))
