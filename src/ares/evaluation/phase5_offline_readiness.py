@@ -6,7 +6,7 @@ This is a software acceptance summary, not permission for live operation.
 
 import json
 from collections.abc import Sequence
-from dataclasses import asdict
+from typing import cast
 
 from ares.evaluation.phase5_acceptance import phase5_acceptance
 from ares.evaluation.phase5_acquisition_acceptance import acquisition_acceptance
@@ -23,16 +23,17 @@ def offline_readiness() -> dict[str, object]:
     transport = ReadOnlyTCPTransport("127.0.0.1", 9)
     diagnostics = acquisition_diagnostics(unused, transport.stats())
     transport.close()
-    evidence = diagnostics["evidence_limits"]
+    evidence = cast("dict[str, str]", diagnostics["evidence_limits"])
+    acquisition_report = cast("dict[str, object]", diagnostics["acquisition"])
     checks = {
         "recorded_replay": replay["passed"] == replay["total"],
         "acquisition": acquisition["passed"] == acquisition["total"],
         "diagnostic_not_started": (
-            diagnostics["acquisition"]["state"] == "not_started"
-            and diagnostics["acquisition"]["acceptance_ratio"] is None
+            acquisition_report["state"] == "not_started"
+            and acquisition_report["acceptance_ratio"] is None
         ),
         "diagnostic_no_unproved_claims": (
-            isinstance(evidence, dict)
+            len(evidence) == 4
             and all(value == "not_assessed" for value in evidence.values())
         ),
         "no_transport_connections": transport.stats().connection_attempts == 0,
