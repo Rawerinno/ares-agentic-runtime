@@ -27,6 +27,12 @@ Rejected frames do not advance the sequence position. A subsequent valid
 frame at the expected step is accepted, but hardware reconnect policy and
 any missing-sample recovery require a separate, explicit design.
 
+Numeric overflow during conversion is an invalid-schema error, and JSON that
+exceeds the parser's nesting limit is an invalid-JSON error. Both remain inside
+the structured failure boundary, leave sequence state unchanged, and are counted
+by acquisition metrics. Recorded-file loading similarly reports `RecordingError`
+for numeric overflow and excessive nesting.
+
 The `timeout_s` parameter is passed to the injected receiver. **ARES does
 not enforce elapsed wall-clock time around a blocking receiver**. A real
 serial/network adapter must independently implement that deadline, bound its

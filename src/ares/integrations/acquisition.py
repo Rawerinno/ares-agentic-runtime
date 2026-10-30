@@ -51,7 +51,7 @@ class BoundedAcquisition:
                 object_pairs_hook=unique_json_fields,
                 parse_constant=reject_nonfinite_json_constant,
             )
-        except (UnicodeError, ValueError, RecordingError):
+        except (UnicodeError, ValueError, RecordingError, RecursionError):
             return AcquisitionResult(None, "acquisition_invalid_json")
         if not isinstance(value, dict):
             return AcquisitionResult(None, "acquisition_invalid_schema")
@@ -70,7 +70,10 @@ class BoundedAcquisition:
             or type(healthy) is not bool
         ):
             return AcquisitionResult(None, "acquisition_invalid_schema")
-        value_c = float(cast("int | float", temperature))
+        try:
+            value_c = float(cast("int | float", temperature))
+        except OverflowError:
+            return AcquisitionResult(None, "acquisition_invalid_schema")
         if not isfinite(value_c):
             return AcquisitionResult(None, "acquisition_invalid_schema")
         if step != self._next_step or (
