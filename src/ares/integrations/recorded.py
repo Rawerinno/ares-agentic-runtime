@@ -55,7 +55,10 @@ class RecordedSensor:
                 raise RecordingError("recording_invalid_timestamps")
             try:
                 analyze_timing(
-                    tuple(TimedReading(index, timestamp) for index, timestamp in enumerate(timestamps_s)),
+                    tuple(
+                        TimedReading(index, timestamp)
+                        for index, timestamp in enumerate(timestamps_s)
+                    ),
                     max_gap_s=1.0,
                 )
             except ValueError as exc:
