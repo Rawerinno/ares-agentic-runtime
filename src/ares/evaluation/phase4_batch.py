@@ -3,7 +3,11 @@
 import argparse
 import json
 from collections.abc import Sequence
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from ares.evaluation.audit import append_entry
+from ares.evaluation.audit_storage import extend_audit, read_audit
 from ares.evaluation.ollama_benchmark import benchmark
 from ares.evaluation.phase4_acceptance import phase4_acceptance
 
@@ -12,11 +16,19 @@ Report = dict[str, object]
 
 def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2) -> Report:
     gates = phase4_acceptance()
+    with TemporaryDirectory() as directory:
+        path = Path(directory) / "audit.jsonl"
+        first = append_entry((), "sample", {"temperature_c": 20})
+        extend_audit(path, (), first)
+        second = append_entry(read_audit(path), "sample", {"temperature_c": 85})
+        extend_audit(path, first, second)
+        audit_verified = read_audit(path) == second
     cases = benchmark(live=live, model=model, repeats=repeats)
     checks = {
         "offline_acceptance": gates["passed"] == gates["total"],
         "governed_cases": cases["governed_passed"] == cases["total"],
         "model_available": cases["model_error_count"] == 0,
+        "audit_two_event_roundtrip": audit_verified,
     }
     return {
         "checks": checks,
