@@ -52,3 +52,11 @@ live-device safety guarantees.
 5. Review audit and authorization boundaries before exposing new devices.
 
 No live-hardware validation is claimed by these offline tests.
+
+## Concrete receive-only transport
+
+An opt-in [TCP receiver](phase5_tcp_readonly.md) now implements the deadline,
+bounded newline framing, connection budget, cooldown, and transport counters.
+The boundary above remains transport-neutral. No hardware endpoint is enabled
+or registered as an agent tool. The TCP implementation is validated only with
+offline loopback peers and injected faults; hardware entry gates still apply.
