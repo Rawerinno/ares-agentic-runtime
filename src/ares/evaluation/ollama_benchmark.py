@@ -8,7 +8,7 @@ from statistics import mean, median
 from typing import cast
 
 from ares.integrations import ReadOnlyToolGateway
-from ares.intelligence.governance import governed_decision
+from ares.intelligence.degraded import govern_outcome
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
@@ -69,12 +69,8 @@ def benchmark(
                 and outcome.decision.kind.value == scenario.expected_kind
             )
             valid += int(passed)
-            governed = (
-                governed_decision(assessment, outcome.decision)
-                if outcome.decision is not None
-                else None
-            )
-            governed_passed = governed is not None and governed.kind.value == scenario.expected_kind
+            governed = govern_outcome(assessment, outcome)
+            governed_passed = governed.kind.value == scenario.expected_kind
             governed_valid += int(governed_passed)
             cases.append(
                 {
@@ -84,7 +80,8 @@ def benchmark(
                     "status": outcome.status.value,
                     "proposal": outcome.decision.kind.value if outcome.decision else None,
                     "expected_proposal": scenario.expected_kind,
-                    "governed_proposal": governed.kind.value if governed else None,
+                    "governed_proposal": governed.kind.value,
+                    "governance_mode": governed.mode,
                     "governed_passed": governed_passed,
                     "error_code": outcome.error_code,
                     "elapsed_ms": round(outcome.elapsed_ms, 2),
