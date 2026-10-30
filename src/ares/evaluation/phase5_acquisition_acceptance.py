@@ -1,8 +1,6 @@
 """Deterministic Phase 5 acquisition acceptance gates without physical devices."""
 
 import json
-from typing import cast
-
 from ares.integrations.acquisition import BoundedAcquisition
 from ares.integrations.acquisition_metrics import MonitoredAcquisition
 
@@ -48,7 +46,7 @@ def acquisition_acceptance() -> dict[str, object]:
     return {
         "phase": 5,
         "mode": "offline-read-only",
-        "checks": cast("dict[str, bool]", checks),
+        "checks": checks,
         "passed": sum(checks.values()),
         "total": len(checks),
         "hardware_validated": False,
