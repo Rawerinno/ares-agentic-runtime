@@ -27,11 +27,22 @@ class AcquisitionResult:
 class BoundedAcquisition:
     """Validate one bounded response from an injected read-only transport."""
 
-    def __init__(self, receive: Callable[[float], bytes], *, timeout_s: float = 1.0) -> None:
+    def __init__(
+        self,
+        receive: Callable[[float], bytes],
+        *,
+        timeout_s: float = 1.0,
+        expected_device_id: str | None = None,
+    ) -> None:
         if not isfinite(timeout_s) or timeout_s <= 0:
             raise ValueError("timeout_s must be finite and positive")
+        if expected_device_id is not None and (
+            type(expected_device_id) is not str or not expected_device_id.strip()
+        ):
+            raise ValueError("expected_device_id must be a nonblank string or None")
         self._receive = receive
         self._timeout_s = timeout_s
+        self._expected_device_id = expected_device_id
         self._next_step = 0
         self._device_id: str | None = None
 
@@ -76,6 +87,8 @@ class BoundedAcquisition:
             return AcquisitionResult(None, "acquisition_invalid_schema")
         if not isfinite(value_c):
             return AcquisitionResult(None, "acquisition_invalid_schema")
+        if self._expected_device_id is not None and device_id != self._expected_device_id:
+            return AcquisitionResult(None, "acquisition_device_mismatch")
         if step != self._next_step or (
             self._device_id is not None and device_id != self._device_id
         ):

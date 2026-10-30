@@ -21,6 +21,14 @@ Each frame is a UTF-8 JSON object containing exactly the following fields:
 
 ## Failure semantics
 
+Callers may set `expected_device_id="sensor-1"` on `BoundedAcquisition` before
+any read. It must be a nonblank string; `None` retains the legacy first-accepted
+sample identity binding. A configured value is compared exactly, without
+trimming or case folding. Schema-valid messages from another device return
+`acquisition_device_mismatch` before sequence validation. Rejections leave the
+expected identity and next sequence unchanged and are included in monitoring.
+This is a consistency check, not cryptographic device authentication.
+
 A read returns `AcquisitionResult(snapshot=None, error_code=...)` for
 invalid data, receive timeouts, and transport operating-system errors.
 Rejected frames do not advance the sequence position. A subsequent valid
