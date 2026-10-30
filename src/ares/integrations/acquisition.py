@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import cast
 
-from ares.integrations.recorded import RecordingError, reject_nonfinite_json_constant, unique_json_fields
+from ares.integrations.recorded import (
+    RecordingError,
+    reject_nonfinite_json_constant,
+    unique_json_fields,
+)
 from ares.simulation import DeviceSnapshot
 
 
