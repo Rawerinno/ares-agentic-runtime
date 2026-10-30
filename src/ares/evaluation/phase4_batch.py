@@ -70,10 +70,13 @@ def validate(
 def run(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--preemptive", action="store_true")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--repeats", type=int, default=2)
     args = parser.parse_args(argv)
-    result = validate(live=args.live, model=args.model, repeats=args.repeats)
+    result = validate(
+        live=args.live, model=args.model, repeats=args.repeats, preemptive=args.preemptive
+    )
     print(json.dumps(result, indent=2))
     return 0 if result["passed"] == result["total"] else 1
 
