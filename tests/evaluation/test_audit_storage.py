@@ -67,3 +67,25 @@ def test_selected_symlink_path_rejected(tmp_path: Path) -> None:
         read_audit(link)
     with pytest.raises(AuditIntegrityError, match="symlink"):
         extend_audit(link, (), append_entry((), "event", {}))
+
+
+def test_existing_writer_lock_rejects_append(tmp_path: Path) -> None:
+    path = tmp_path / "audit.jsonl"
+    lock = tmp_path / "audit.jsonl.lock"
+    lock.write_text("held", encoding="utf-8")
+    with pytest.raises(AuditIntegrityError, match="audit_writer_busy"):
+        extend_audit(path, (), append_entry((), "event", {}))
+    assert lock.read_text(encoding="utf-8") == "held"
+    assert not path.exists()
+
+
+def test_lock_released_after_rejected_stale_append(tmp_path: Path) -> None:
+    path = tmp_path / "audit.jsonl"
+    first = append_entry((), "first", {})
+    extend_audit(path, (), first)
+    with pytest.raises(AuditIntegrityError, match="stale"):
+        extend_audit(path, (), append_entry((), "second", {}))
+    assert not path.with_name(path.name + ".lock").exists()
+    second = append_entry(first, "second", {})
+    extend_audit(path, first, second)
+    assert read_audit(path) == second
