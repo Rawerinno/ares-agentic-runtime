@@ -5,7 +5,7 @@ Intended for a single trusted local operator, not a multi-user audit service.
 
 import os
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -44,7 +44,7 @@ def save_audit(path: Path, entries: tuple[AuditEntry, ...]) -> None:
 
 
 @contextmanager
-def _exclusive_writer(path: Path) -> Iterator[None]:
+def _exclusive_writer(path: Path) -> Generator[None]:
     """Acquire a cooperative cross-process lock without waiting or stale-lock eviction."""
     lock = path.with_name(path.name + ".lock")
     if lock.is_symlink():
