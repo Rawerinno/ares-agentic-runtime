@@ -19,7 +19,10 @@ from ares.supervisor import Assessment, Severity
 Report = dict[str, object]
 
 
-def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2) -> Report:
+def validate(
+    *, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2,
+    preemptive: bool = False,
+) -> Report:
     gates = phase4_acceptance()
     with TemporaryDirectory() as directory:
         path = Path(directory) / "audit.jsonl"
