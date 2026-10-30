@@ -10,6 +10,7 @@ from ares.evaluation.diagnostic_audit import record_diagnostic
 from ares.evaluation.diagnostic_quality import assess_quality
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.consistency import check_consistency
+from ares.intelligence.degraded import govern_outcome
 from ares.intelligence.diagnostics import build_diagnostic_report
 from ares.intelligence.hypotheses import suggested_checks
 from ares.intelligence.local import LocalReferenceModel
@@ -48,6 +49,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         model = LocalReferenceModel()
     result = BoundedProposalEngine(model).evaluate(assessment)
     report = build_diagnostic_report(assessment, result.decision)
+    governed = govern_outcome(assessment, result)
     hypotheses = suggested_checks(assessment)
     consistency = check_consistency(assessment, report, hypotheses)
     previous = read_audit(args.audit_file) if args.audit_file else ()
@@ -71,7 +73,9 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "status": result.status.value,
                 "proposal": result.decision.kind.value if result.decision else None,
                 "error_code": result.error_code,
-                "governed_proposal": report.recommendation.value,
+                "governed_proposal": governed.kind.value,
+                "governance_mode": governed.mode,
+                "model_accepted": governed.model_accepted,
                 "trusted_explanation": report.explanation,
                 "model_consistent": report.model_consistent,
                 "model_suggestion": report.model_suggestion,
