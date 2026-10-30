@@ -74,9 +74,12 @@ def failure_matrix() -> dict[str, object]:
             if outcome.decision is not None
             else None
         )
-        safe = safe and (
-            governed is None if not accepted else governed is not None and governed.kind is DecisionKind.REQUEST_REVIEW
-        )
+        if accepted:
+            safe = safe and governed is not None
+            if governed is not None:
+                safe = safe and governed.kind is DecisionKind.REQUEST_REVIEW
+        else:
+            safe = safe and governed is None
         cases.append(
             {
                 "name": scenario.name,
