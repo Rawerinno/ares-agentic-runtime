@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import cast
 
-from ares.integrations.recorded import RecordingError, _reject_nonfinite_constant, _unique_fields
+from ares.integrations.recorded import RecordingError, reject_nonfinite_json_constant, unique_json_fields
 from ares.simulation import DeviceSnapshot
 
 
@@ -44,8 +44,8 @@ class BoundedAcquisition:
         try:
             value: object = json.loads(
                 frame.decode("utf-8"),
-                object_pairs_hook=_unique_fields,
-                parse_constant=_reject_nonfinite_constant,
+                object_pairs_hook=unique_json_fields,
+                parse_constant=reject_nonfinite_json_constant,
             )
         except (UnicodeError, ValueError, RecordingError):
             return AcquisitionResult(None, "acquisition_invalid_json")
