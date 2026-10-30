@@ -42,6 +42,7 @@ CASES = (
     ),
 )
 
+
 def failure_matrix() -> dict[str, object]:
     """No model network calls. An invalid result must never yield a decision."""
     assessment = Assessment(
