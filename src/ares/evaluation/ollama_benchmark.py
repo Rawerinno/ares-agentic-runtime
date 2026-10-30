@@ -45,7 +45,8 @@ def benchmark(
         raise ValueError("repeats must be between 1 and 20")
     if live:
         limits = RequestLimits(timeout_seconds=30, max_response_bytes=16384)
-        adapter = OllamaAdapter(ProviderClient(PreemptiveOllamaTransport() if preemptive else OllamaLocalTransport(), limits), model)
+        transport = PreemptiveOllamaTransport() if preemptive else OllamaLocalTransport()
+        adapter = OllamaAdapter(ProviderClient(transport, limits), model)
     else:
         adapter = LocalReferenceModel()
     engine = BoundedProposalEngine(adapter)
@@ -113,7 +114,9 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--repeats", type=int, default=1, help="Cycles per scenario (1-20)")
     args = parser.parse_args(argv)
-    report = benchmark(live=args.live, model=args.model, repeats=args.repeats, preemptive=args.preemptive)
+    report = benchmark(
+        live=args.live, model=args.model, repeats=args.repeats, preemptive=args.preemptive
+    )
     print(json.dumps(report, indent=2))
     return 0 if report["passed"] == report["total"] else 1
 
