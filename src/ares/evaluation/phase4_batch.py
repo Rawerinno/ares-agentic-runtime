@@ -41,7 +41,7 @@ def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2
         and fallback.kind is DecisionKind.REQUEST_REVIEW
         and not fallback.model_accepted
     )
-    cases = benchmark(live=live, model=model, repeats=repeats)
+    cases = benchmark(live=live, model=model, repeats=repeats, preemptive=preemptive)
     checks = {
         "offline_acceptance": gates["passed"] == gates["total"],
         "governed_cases": cases["governed_passed"] == cases["total"],
