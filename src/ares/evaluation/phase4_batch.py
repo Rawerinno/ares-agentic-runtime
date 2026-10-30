@@ -10,6 +10,11 @@ from ares.evaluation.audit import append_entry
 from ares.evaluation.audit_storage import extend_audit, read_audit
 from ares.evaluation.ollama_benchmark import benchmark
 from ares.evaluation.phase4_acceptance import phase4_acceptance
+from ares.intelligence.decisions import DecisionKind
+from ares.intelligence.degraded import govern_outcome
+from ares.intelligence.resilience import OutcomeStatus, ProposalOutcome
+from ares.simulation import DeviceSnapshot
+from ares.supervisor import Assessment, Severity
 
 Report = dict[str, object]
 
@@ -23,12 +28,26 @@ def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2
         second = append_entry(read_audit(path), "sample", {"temperature_c": 85})
         extend_audit(path, first, second)
         audit_verified = read_audit(path) == second
+    assessment = Assessment(
+        DeviceSnapshot("simulated", 1, 85.0, True),
+        Severity.CRITICAL,
+        "Critical simulated temperature",
+        "Request engineer review",
+    )
+    error = ProposalOutcome(OutcomeStatus.MODEL_ERROR, None, "model_exception", 1.0)
+    fallback = govern_outcome(assessment, error)
+    degraded_ok = (
+        fallback.mode == "deterministic_degraded"
+        and fallback.kind is DecisionKind.REQUEST_REVIEW
+        and not fallback.model_accepted
+    )
     cases = benchmark(live=live, model=model, repeats=repeats)
     checks = {
         "offline_acceptance": gates["passed"] == gates["total"],
         "governed_cases": cases["governed_passed"] == cases["total"],
         "model_available": cases["model_error_count"] == 0,
         "audit_two_event_roundtrip": audit_verified,
+        "mocked_degraded_fallback": degraded_ok,
     }
     return {
         "checks": checks,
