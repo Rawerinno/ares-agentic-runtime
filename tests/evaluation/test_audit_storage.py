@@ -89,3 +89,26 @@ def test_lock_released_after_rejected_stale_append(tmp_path: Path) -> None:
     second = append_entry(first, "second", {})
     extend_audit(path, first, second)
     assert read_audit(path) == second
+
+
+def test_atomic_replace_failure_preserves_previous_chain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ares.evaluation import audit_storage
+
+    path = tmp_path / "audit.jsonl"
+    first = append_entry((), "initial", {"value": 1})
+    extend_audit(path, (), first)
+    before = path.read_bytes()
+
+    def broken_replace(source: str, destination: Path) -> None:
+        raise OSError("simulated storage failure")
+
+    monkeypatch.setattr(audit_storage.os, "replace", broken_replace)
+    with pytest.raises(OSError, match="simulated storage failure"):
+        extend_audit(path, first, append_entry(first, "next", {"value": 2}))
+
+    assert path.read_bytes() == before
+    assert read_audit(path) == first
+    assert not path.with_name(path.name + ".lock").exists()
+    assert list(tmp_path.glob(".ares-audit-*")) == []
