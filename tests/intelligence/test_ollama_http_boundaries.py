@@ -87,7 +87,7 @@ def test_non_loopback_host_rejected() -> None:
         OllamaLocalTransport(host="example.invalid")
 
 
-def test_socket_read_timeout_rejected() -> None:
+def test_silent_body_exceeding_budget_rejected() -> None:
     class SlowHandler(Handler):
         scenario: ClassVar[str] = "delayed"
 
@@ -97,7 +97,11 @@ def test_socket_read_timeout_rejected() -> None:
     try:
         port = server.server_address[1]
         assert isinstance(port, int)
-        with pytest.raises(ProviderTransportError, match="ollama_connection_failed"):
+        # Scheduling can exhaust the total deadline before the body read starts.
+        # Both paths must fail closed; neither may return the delayed response.
+        with pytest.raises(
+            ProviderTransportError, match=r"^ollama_(connection_failed|deadline_exceeded)$"
+        ):
             OllamaLocalTransport(port=port).request(
                 b"{}", limits=RequestLimits(timeout_seconds=0.02)
             )
