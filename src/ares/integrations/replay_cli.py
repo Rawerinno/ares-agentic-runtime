@@ -7,7 +7,9 @@ from pathlib import Path
 
 from ares.integrations import ReadOnlyToolGateway
 from ares.integrations.recorded import RecordedSensor, RecordingError
+from ares.integrations.replay_anomalies import analyze_recording
 from ares.safety import Capability, Policy
+from ares.simulation import DeviceSnapshot
 from ares.supervisor import Supervisor
 
 
@@ -20,8 +22,10 @@ def replay(path: Path) -> dict[str, object]:
     gateway.register_sensor("recorded.temperature", sensor)
     supervisor = Supervisor(gateway)
     cases: list[dict[str, object]] = []
+    snapshots: list[DeviceSnapshot] = []
     while True:
         outcome = supervisor.assess(agent_id="supervisor", tool_id="recorded.temperature")
+        snapshots.append(outcome.snapshot)
         cases.append(
             {
                 "step": outcome.snapshot.step,
@@ -37,7 +41,14 @@ def replay(path: Path) -> dict[str, object]:
             if str(exc) != "recording_exhausted":
                 raise
             break
-    return {"mode": "recorded-read-only", "total": len(cases), "cases": cases}
+    findings = analyze_recording(tuple(snapshots))
+    return {
+        "mode": "recorded-read-only",
+        "total": len(cases),
+        "cases": cases,
+        "findings": [{"step": f.step, "code": f.code} for f in findings],
+        "staleness_assessed": False,
+    }
 
 
 def run(argv: Sequence[str] | None = None) -> int:
