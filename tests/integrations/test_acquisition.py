@@ -25,6 +25,7 @@ def test_valid_frames_preserve_order() -> None:
 
 def test_timeout_keeps_sequence_position() -> None:
     attempts = iter((None, frame()))
+
     def receive(timeout: float) -> bytes:
         assert timeout == 0.5
         value = next(attempts)
@@ -44,8 +45,10 @@ def test_timeout_keeps_sequence_position() -> None:
         (b" " * 4097, "acquisition_invalid_frame"),
         (b"not-json", "acquisition_invalid_json"),
         (b'{"step":0,"step":1}', "acquisition_invalid_json"),
-        (b'{"device_id":"x","step":0,"temperature_c":NaN,"healthy":true}',
-         "acquisition_invalid_json"),
+        (
+            b'{"device_id":"x","step":0,"temperature_c":NaN,"healthy":true}',
+            "acquisition_invalid_json",
+        ),
         (b"[]", "acquisition_invalid_schema"),
         (b'{"device_id":"x","step":0,"temperature_c":23}', "acquisition_invalid_schema"),
         (frame(1), "acquisition_invalid_sequence"),
