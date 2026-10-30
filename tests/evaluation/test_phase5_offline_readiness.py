@@ -40,5 +40,5 @@ def test_failed_gate_causes_nonzero_exit(capsys: CaptureFixture[str]) -> None:
         },
     ):
         assert run([]) == 1
-    report = json.loads(capture.readouterr().out)
+    report = json.loads(capsys.readouterr().out)
     assert report["checks"]["recorded_replay"] is False
