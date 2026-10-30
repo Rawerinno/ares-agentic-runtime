@@ -5,6 +5,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from statistics import mean, median
+from typing import cast
 
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.governance import governed_decision
@@ -90,7 +91,7 @@ def benchmark(
                     "passed": passed,
                 }
             )
-    durations = [float(item["elapsed_ms"]) for item in cases]
+    durations = [cast("float", item["elapsed_ms"]) for item in cases]
     return {
         "repeats": repeats,
         "latency_mean_ms": round(mean(durations), 2),
