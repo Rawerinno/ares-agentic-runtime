@@ -46,6 +46,7 @@ def validate(*, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2
         "offline_acceptance": gates["passed"] == gates["total"],
         "governed_cases": cases["governed_passed"] == cases["total"],
         "model_available": cases["model_error_count"] == 0,
+        "no_rejected_responses": cases["rejected_count"] == 0,
         "audit_two_event_roundtrip": audit_verified,
         "mocked_degraded_fallback": degraded_ok,
     }
