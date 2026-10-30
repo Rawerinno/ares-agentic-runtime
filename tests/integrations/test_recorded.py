@@ -86,3 +86,39 @@ def test_recorded_sensor_passes_through_authorized_gateway(tmp_path: Path) -> No
     sensor.advance()
     second = supervisor.assess(agent_id="supervisor", tool_id="recorded")
     assert second.severity is Severity.CRITICAL
+
+
+@pytest.mark.parametrize(
+    ("payload", "error"),
+    [
+        (
+            '[{"device_id":"x","step":0,"step":1,'
+            '"temperature_c":20,"healthy":true}]',
+            "recording_duplicate_field",
+        ),
+        (
+            '[{"device_id":"x","step":0,"temperature_c":NaN,"healthy":true}]',
+            "recording_invalid_number",
+        ),
+        (
+            '[{"device_id":"x","step":0,"temperature_c":Infinity,"healthy":true}]',
+            "recording_invalid_number",
+        ),
+        (
+            '[{"device_id":"x","step":0,"temperature_c":-Infinity,"healthy":true}]',
+            "recording_invalid_number",
+        ),
+    ],
+)
+def test_recording_rejects_ambiguous_json(
+    tmp_path: Path, payload: str, error: str
+) -> None:
+    path = tmp_path / "ambiguous.json"
+    path.write_text(payload, encoding="utf-8")
+    with pytest.raises(RecordingError, match=error):
+        RecordedSensor.from_file(path)
+
+
+def test_recording_accepts_valid_strict_json(tmp_path: Path) -> None:
+    sensor = RecordedSensor.from_file(save(tmp_path, sample()))
+    assert sensor.read().device_id == "recorded-1"
