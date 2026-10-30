@@ -45,7 +45,10 @@ def replay(path: Path) -> dict[str, object]:
     findings = analyze_recording(tuple(snapshots))
     timed_findings = (
         analyze_timing(
-            tuple(TimedReading(index, timestamp) for index, timestamp in enumerate(sensor.timestamps_s)),
+            tuple(
+                TimedReading(index, timestamp)
+                for index, timestamp in enumerate(sensor.timestamps_s)
+            ),
             max_gap_s=1.0,
         )
         if sensor.timestamps_s
