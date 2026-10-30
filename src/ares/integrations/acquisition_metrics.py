@@ -24,7 +24,7 @@ class MonitoredAcquisition:
     _successful: int = 0
     _streak: int = 0
     _max_streak: int = 0
-    _errors: dict[str, int] = field(default_factory=dict)
+    _errors: dict[str, int] = field(default_factory=lambda: dict[str, int]())
 
     def read(self) -> AcquisitionResult:
         result = self.source.read()
