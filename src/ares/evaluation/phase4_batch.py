@@ -20,7 +20,10 @@ Report = dict[str, object]
 
 
 def validate(
-    *, live: bool = False, model: str = "llama3.2:3b", repeats: int = 2,
+    *,
+    live: bool = False,
+    model: str = "llama3.2:3b",
+    repeats: int = 2,
     preemptive: bool = False,
 ) -> Report:
     gates = phase4_acceptance()
