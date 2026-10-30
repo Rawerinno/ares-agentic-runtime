@@ -1,6 +1,7 @@
 """Deterministic Phase 5 acquisition acceptance gates without physical devices."""
 
 import json
+
 from ares.integrations.acquisition import BoundedAcquisition
 from ares.integrations.acquisition_metrics import MonitoredAcquisition
 
