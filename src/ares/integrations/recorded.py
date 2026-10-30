@@ -12,6 +12,21 @@ class RecordingError(ValueError):
     """A recorded telemetry file is malformed or unsafe to replay."""
 
 
+def _unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject duplicate JSON keys instead of silently accepting the last value."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise RecordingError("recording_duplicate_field")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_constant(value: str) -> object:
+    """Python's JSON decoder otherwise accepts non-standard NaN/Infinity tokens."""
+    raise RecordingError("recording_invalid_number")
+
+
 class RecordedSensor:
     """Replay a finite, immutable list of local sensor observations.
 
@@ -53,7 +68,13 @@ class RecordedSensor:
         if path.stat().st_size > 1024 * 1024:
             raise RecordingError("recording_file_too_large")
         try:
-            value: object = json.loads(path.read_text(encoding="utf-8"))
+            value: object = json.loads(
+                path.read_text(encoding="utf-8"),
+                object_pairs_hook=_unique_fields,
+                parse_constant=_reject_nonfinite_constant,
+            )
+        except RecordingError:
+            raise
         except (UnicodeError, ValueError) as exc:
             raise RecordingError("recording_invalid_json") from exc
         if not isinstance(value, list):
