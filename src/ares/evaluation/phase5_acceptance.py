@@ -25,9 +25,8 @@ def phase5_acceptance() -> dict[str, object]:
         classifications = [case["severity"] for case in cases]
         checks = {
             "replay_all_steps": result["total"] == 4,
-            "thresholds_and_unhealthy": classifications == [
-                "normal", "warning", "critical", "critical"
-            ],
+            "thresholds_and_unhealthy": classifications
+            == ["normal", "warning", "critical", "critical"],
         }
         samples[1]["step"] = 0
         path.write_text(json.dumps(samples), encoding="utf-8")
