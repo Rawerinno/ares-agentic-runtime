@@ -1,5 +1,6 @@
 """Subprocess isolation enforces a wall-clock budget independently of urllib."""
 
+from contextlib import suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from time import monotonic, sleep
@@ -18,10 +19,8 @@ class Endpoint(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
-        try:
+        with suppress(OSError):
             self.wfile.write(payload)
-        except OSError:
-            pass
 
     def log_message(self, format: str, *args: object) -> None:
         pass
