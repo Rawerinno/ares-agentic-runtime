@@ -125,7 +125,7 @@ def ollama_generator(model: str, *, timeout: float = 30.0) -> Generate:
         if not isinstance(response, str):
             raise ValueError("missing response")
         decoded: object = json.loads(response)
-        if not isinstance(decoded, dict) or set(decoded) != {"answer"}:
+        if not isinstance(decoded, dict) or set(cast("dict[str, object]", decoded)) != {"answer"}:
             raise ValueError("invalid answer shape")
         answer = cast("dict[str, object]", decoded)["answer"]
         if not isinstance(answer, str) or len(answer) > 100:
