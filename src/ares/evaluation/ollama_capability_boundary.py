@@ -8,6 +8,7 @@ import argparse
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from statistics import mean
 from time import monotonic
 from typing import cast
@@ -92,6 +93,20 @@ PROBES = (
 Generate = Callable[[str], str]
 
 
+def _normalized_answer(answer: str | None, *, numeric: bool) -> str | None:
+    """Compare numeric answers by value, without accepting prose or non-finite values."""
+    if answer is None:
+        return None
+    value = answer.strip()
+    if not numeric:
+        return value
+    try:
+        number = Decimal(value)
+    except InvalidOperation:
+        return None
+    return str(number.normalize()) if number.is_finite() else None
+
+
 def ollama_generator(model: str, *, timeout: float = 30.0) -> Generate:
     """Return a bounded localhost-only Ollama generator with deterministic sampling."""
     if not model.strip():
@@ -141,10 +156,10 @@ def evaluate(
     repeats: int = 3,
     min_accuracy: float = 0.90,
 ) -> dict[str, object]:
-    """Stop at the first tier failing accuracy or exact repeatability.
+    """Stop at the first tier failing accuracy or semantic repeatability.
 
-    A case is consistent only when all independent attempts return the same
-    answer, including failures. This is stronger than reporting an average alone.
+    Numeric answers compare by exact Decimal value; categorical answers compare
+    as written. Invalid and missing answers never earn correctness credit.
     """
     if not 2 <= repeats <= 10:
         raise ValueError("repeats must be between 2 and 10")
@@ -165,13 +180,18 @@ def evaluate(
                     answer = None
                 latencies.append(round((monotonic() - start) * 1000, 2))
                 answers.append(answer)
+            numeric = tier in (1, 2)
+            normalized = [_normalized_answer(answer, numeric=numeric) for answer in answers]
+            expected_normalized = _normalized_answer(case.expected, numeric=numeric)
             rows.append(
                 {
                     "case": case.name,
                     "expected": case.expected,
                     "answers": answers,
-                    "correct": sum(a == case.expected for a in answers),
-                    "consistent": len(set(answers)) == 1,
+                    "correct": sum(
+                        a is not None and a == expected_normalized for a in normalized
+                    ),
+                    "consistent": len(set(normalized)) == 1,
                     "latency_mean_ms": round(mean(latencies), 2),
                 }
             )
