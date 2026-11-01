@@ -165,28 +165,32 @@ def evaluate(
                     answer = None
                 latencies.append(round((monotonic() - start) * 1000, 2))
                 answers.append(answer)
-            rows.append({
-                "case": case.name,
-                "expected": case.expected,
-                "answers": answers,
-                "correct": sum(a == case.expected for a in answers),
-                "consistent": len(set(answers)) == 1,
-                "latency_mean_ms": round(mean(latencies), 2),
-            })
+            rows.append(
+                {
+                    "case": case.name,
+                    "expected": case.expected,
+                    "answers": answers,
+                    "correct": sum(a == case.expected for a in answers),
+                    "consistent": len(set(answers)) == 1,
+                    "latency_mean_ms": round(mean(latencies), 2),
+                }
+            )
         total = len(rows) * repeats
         correct = sum(cast("int", row["correct"]) for row in rows)
         accuracy = correct / total
         all_consistent = all(row["consistent"] is True for row in rows)
         passed = accuracy >= min_accuracy and all_consistent
-        tiers.append({
-            "tier": tier,
-            "accuracy": round(accuracy, 4),
-            "correct": correct,
-            "total": total,
-            "all_consistent": all_consistent,
-            "passed": passed,
-            "cases": rows,
-        })
+        tiers.append(
+            {
+                "tier": tier,
+                "accuracy": round(accuracy, 4),
+                "correct": correct,
+                "total": total,
+                "all_consistent": all_consistent,
+                "passed": passed,
+                "cases": rows,
+            }
+        )
         if not passed:
             break
         trusted_tier = tier
