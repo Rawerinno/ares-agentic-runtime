@@ -89,6 +89,9 @@ PROBES = (
 )
 
 
+Generate = Callable[[str], str]
+
+
 def ollama_generator(model: str, *, timeout: float = 30.0) -> Generate:
     """Return a bounded localhost-only Ollama generator with deterministic sampling."""
     if not model.strip():
