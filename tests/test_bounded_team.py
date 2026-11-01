@@ -52,8 +52,12 @@ def test_model_failure_rejected_without_fallback_authority() -> None:
 
 @pytest.mark.parametrize(
     "bad",
-    [("20 C", "30 C"), ("NaN C", "20 C", "30 C"),
-     ("20 C", "30 K", "40 C"), ("20 C", "unexpected 30 C", "40 C")],
+    [
+        ("20 C", "30 C"),
+        ("NaN C", "20 C", "30 C"),
+        ("20 C", "30 K", "40 C"),
+        ("20 C", "unexpected 30 C", "40 C"),
+    ],
 )
 def test_invalid_measurements_rejected_before_model(bad: tuple[str, ...]) -> None:
     def must_not_run(_question: str) -> str:
