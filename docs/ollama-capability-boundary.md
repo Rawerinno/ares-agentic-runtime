@@ -55,3 +55,43 @@ strings. All nine arithmetic answers were numerically correct. The scorer now
 handles such representation differences, and the run should be repeated so
 the threshold-classification tier can be measured. This is not evidence for
 unseen tasks or general arithmetic reliability.
+
+## Second local run: actual measured limit
+
+Llama 3.2:3B completed all three extraction tasks (9/9) and all three
+arithmetic means (9/9) over three repeats each. It classified 59.9 C
+correctly but labelled both 60 C and 80 C as "normal" (3/9 correct).
+Each answer was repeated consistently, demonstrating that consistency
+without correctness is inadequate. **Tier 2 is the observed boundary
+for these fixed prompts**; the result does not prove general arithmetic
+or sensor-text extraction ability.
+
+Classification, escalation and actuator permissions must always use
+trusted deterministic code. The local model must not be asked to
+approve or override those decisions.
+
+### Experimental bounded three-role demo
+
+The demo uses a model-backed extractor, a model-backed arithmetic stage,
+and an independent deterministic reviewer. It does not use three
+independent LLM instances; the roles execute sequentially by design
+and the reviewer performs exact validation of the model answers.
+
+On the machine running Ollama:
+
+```powershell
+uv run python -m ares.evaluation.bounded_team 55 60 65 --model llama3.2:3b
+uv run python -m ares.evaluation.bounded_team 80 85 90 --model llama3.2:3b
+```
+
+All inputs must be short finite numeric values. The reviewer computes
+the mean and applies safety thresholds using Python, irrespective of
+the LLM output. On disagreement or model unavailability, the demo
+returns a rejected result, exits with a nonzero status, and never makes
+a hardware change. This is a research prototype only; do not connect
+it to physical equipment. It is **not** evidence of successful
+multi-model orchestration or parallel execution.
+
+The next step is independent unseen-task testing and concurrency
+profiling on the user's laptop. We will not broaden the AI's authority
+unless those tests justify it.
