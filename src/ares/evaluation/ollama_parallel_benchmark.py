@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from statistics import mean, median
 from time import monotonic
+from typing import cast
 
 from ares.evaluation.ollama_capability_boundary import ollama_generator
 
@@ -117,7 +118,7 @@ def benchmark(
         wall_ms = (monotonic() - start) * 1000
         count = len(attempts)
         valid = sum(item["correct"] is True for item in attempts)
-        latencies = [float(item["latency_ms"]) for item in attempts]
+        latencies = [cast("float", item["latency_ms"]) for item in attempts]
         error_count = sum(item["error"] is not None for item in attempts)
         stable = all(
             len({str(a["answer"]) for a in attempts if a["name"] == case.name}) == 1
@@ -138,8 +139,8 @@ def benchmark(
                 "attempts": attempts,
             }
         )
-    sequential = float(scenarios[0]["wall_time_ms"])
-    concurrent = float(scenarios[1]["wall_time_ms"])
+    sequential = cast("float", scenarios[0]["wall_time_ms"])
+    concurrent = cast("float", scenarios[1]["wall_time_ms"])
     return {
         "model_scope": "raw_model_only",
         "parallelism": parallelism,
