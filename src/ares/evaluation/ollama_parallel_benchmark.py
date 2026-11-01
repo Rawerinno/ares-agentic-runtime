@@ -123,19 +123,21 @@ def benchmark(
             len({str(a["answer"]) for a in attempts if a["name"] == case.name}) == 1
             for case in cases
         )
-        scenarios.append({
-            "mode": mode,
-            "correct": valid,
-            "total": count,
-            "accuracy": round(valid / count, 4),
-            "error_count": error_count,
-            "consistent_exact_text": stable,
-            "latency_mean_ms": round(mean(latencies), 2),
-            "latency_median_ms": round(median(latencies), 2),
-            "latency_max_ms": round(max(latencies), 2),
-            "wall_time_ms": round(wall_ms, 2),
-            "attempts": attempts,
-        })
+        scenarios.append(
+            {
+                "mode": mode,
+                "correct": valid,
+                "total": count,
+                "accuracy": round(valid / count, 4),
+                "error_count": error_count,
+                "consistent_exact_text": stable,
+                "latency_mean_ms": round(mean(latencies), 2),
+                "latency_median_ms": round(median(latencies), 2),
+                "latency_max_ms": round(max(latencies), 2),
+                "wall_time_ms": round(wall_ms, 2),
+                "attempts": attempts,
+            }
+        )
     sequential = float(scenarios[0]["wall_time_ms"])
     concurrent = float(scenarios[1]["wall_time_ms"])
     return {
