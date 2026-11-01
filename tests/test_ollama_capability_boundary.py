@@ -1,5 +1,7 @@
 """Offline tests for the staged raw-model capability boundary."""
 
+from typing import cast
+
 from ares.evaluation.ollama_capability_boundary import PROBES, evaluate
 
 
@@ -36,7 +38,7 @@ def test_inconsistent_answers_fail_even_at_reasonable_accuracy() -> None:
 
     report = evaluate(variable, repeats=3, min_accuracy=0.80)
     assert report["highest_passing_tier"] == 0
-    first = report["tiers"][0]
+    first = cast("list[dict[str, object]]", report["tiers"])[0]
     assert first["all_consistent"] is False
     assert first["accuracy"] > 0.80
 
@@ -47,7 +49,7 @@ def test_model_exceptions_are_failures_not_governed_success() -> None:
 
     report = evaluate(unavailable, repeats=2)
     assert report["highest_passing_tier"] == 0
-    assert report["tiers"][0]["accuracy"] == 0
+    assert cast("list[dict[str, object]]", report["tiers"])[0]["accuracy"] == 0
     assert report["model_scope"] == "raw_model_only"
 
 
