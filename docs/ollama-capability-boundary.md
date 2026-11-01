@@ -24,8 +24,10 @@ and model answers, so keep the JSON locally if it may contain sensitive data.
 3. Classify measurements at the normal/warning/critical thresholds.
 
 Every case is repeated independently (default: three times). A tier passes
-only if raw answer accuracy is at least 90% **and** every case gives exactly
-the same answer across repetitions. A failing tier stops the run immediately.
+only if raw answer accuracy is at least 90% **and** every case gives semantically
+equivalent answers across repetitions. Numerical answers are compared using exact
+finite decimal values, so `20` and `20.0` are equivalent; prose, non-numeric
+answers, `NaN` and infinity receive no credit. A failing tier stops the run immediately.
 A transport or parsing exception counts as a wrong answer.
 
 `highest_passing_tier` is a *measured test outcome*, not a capability
@@ -44,3 +46,12 @@ Keep final decisions deterministic, use read-only tools, record disagreements,
 and stop safely if confidence or model consistency deteriorates. On a laptop,
 concurrent Ollama calls may serialize or exhaust memory; benchmark concurrency
 before enabling parallel dispatch.
+
+## Interpretation of first local run
+
+The initial local Llama 3.2:3B report yielded 9/9 on extraction and marked
+6/9 for arithmetic because the evaluator compared `20.0` to `20` as
+strings. All nine arithmetic answers were numerically correct. The scorer now
+handles such representation differences, and the run should be repeated so
+the threshold-classification tier can be measured. This is not evidence for
+unseen tasks or general arithmetic reliability.
