@@ -188,9 +188,7 @@ def evaluate(
                     "case": case.name,
                     "expected": case.expected,
                     "answers": answers,
-                    "correct": sum(
-                        a is not None and a == expected_normalized for a in normalized
-                    ),
+                    "correct": sum(a is not None and a == expected_normalized for a in normalized),
                     "consistent": len(set(normalized)) == 1,
                     "latency_mean_ms": round(mean(latencies), 2),
                 }
