@@ -23,12 +23,36 @@ class WorkItem:
 
 
 CASES = (
-    WorkItem("extract_fraction", "Extract Celsius: 'probe is 21.5 C'. Number only.", Decimal("21.5")),
-    WorkItem("extract_negative", "Extract Celsius: 'probe is -12.25 C'. Number only.", Decimal("-12.25")),
-    WorkItem("extract_decimal", "Extract Celsius: 'probe is 73.2 C'. Number only.", Decimal("73.2")),
-    WorkItem("mean_fraction", "Mean of Celsius readings: 10, 11, 12. Number only.", Decimal("11")),
-    WorkItem("mean_decimal", "Mean of Celsius readings: 20.5, 21.5, 22.5. Number only.", Decimal("21.5")),
-    WorkItem("mean_negative", "Mean of Celsius readings: -8, -4, 0. Number only.", Decimal("-4")),
+    WorkItem(
+        "extract_fraction",
+        "Extract Celsius: 'probe is 21.5 C'. Number only.",
+        Decimal("21.5"),
+    ),
+    WorkItem(
+        "extract_negative",
+        "Extract Celsius: 'probe is -12.25 C'. Number only.",
+        Decimal("-12.25"),
+    ),
+    WorkItem(
+        "extract_decimal",
+        "Extract Celsius: 'probe is 73.2 C'. Number only.",
+        Decimal("73.2"),
+    ),
+    WorkItem(
+        "mean_fraction",
+        "Mean of Celsius readings: 10, 11, 12. Number only.",
+        Decimal("11"),
+    ),
+    WorkItem(
+        "mean_decimal",
+        "Mean of Celsius readings: 20.5, 21.5, 22.5. Number only.",
+        Decimal("21.5"),
+    ),
+    WorkItem(
+        "mean_negative",
+        "Mean of Celsius readings: -8, -4, 0. Number only.",
+        Decimal("-4"),
+    ),
 )
 
 
