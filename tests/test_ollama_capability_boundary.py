@@ -40,7 +40,7 @@ def test_inconsistent_answers_fail_even_at_reasonable_accuracy() -> None:
     assert report["highest_passing_tier"] == 0
     first = cast("list[dict[str, object]]", report["tiers"])[0]
     assert first["all_consistent"] is False
-    assert first["accuracy"] > 0.80
+    assert cast("float", first["accuracy"]) > 0.80
 
 
 def test_model_exceptions_are_failures_not_governed_success() -> None:
