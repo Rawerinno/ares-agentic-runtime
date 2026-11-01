@@ -1,7 +1,5 @@
 """Test the bounded three-role ARES pipeline without Ollama or hardware."""
 
-from collections.abc import Callable
-
 import pytest
 
 from ares.evaluation.bounded_team import evaluate_team
