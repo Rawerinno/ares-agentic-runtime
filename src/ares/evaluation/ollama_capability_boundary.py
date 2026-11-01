@@ -25,18 +25,68 @@ class Probe:
 
 
 PROBES = (
-    Probe(1, "extract_20", "Extract the Celsius reading from: 'sensor A: 20 C'. Return only the number.", "20"),
-    Probe(1, "extract_85", "Extract the Celsius reading from: 'sensor B reports 85 degrees C'. Return only the number.", "85"),
-    Probe(1, "extract_negative", "Extract the Celsius reading from: 'sensor C: -5 C'. Return only the number.", "-5"),
-    Probe(2, "mean_20", "Compute the arithmetic mean of these Celsius readings: 18, 20, 22. Return only the number.", "20"),
-    Probe(2, "mean_60", "Compute the arithmetic mean of these Celsius readings: 55, 60, 65. Return only the number.", "60"),
-    Probe(2, "mean_85", "Compute the arithmetic mean of these Celsius readings: 80, 85, 90. Return only the number.", "85"),
-    Probe(3, "normal_edge", "Classify 59.9 C: normal if below 60; warning if 60 to below 80; critical if 80 or above. Return only the class.", "normal"),
-    Probe(3, "warning_edge", "Classify 60 C: normal if below 60; warning if 60 to below 80; critical if 80 or above. Return only the class.", "warning"),
-    Probe(3, "critical_edge", "Classify 80 C: normal if below 60; warning if 60 to below 80; critical if 80 or above. Return only the class.", "critical"),
+    Probe(
+        1,
+        "extract_20",
+        "Extract the Celsius reading from: 'sensor A: 20 C'. Return only the number.",
+        "20",
+    ),
+    Probe(
+        1,
+        "extract_85",
+        "Extract the Celsius reading from: 'sensor B reports 85 degrees C'. "
+        "Return only the number.",
+        "85",
+    ),
+    Probe(
+        1,
+        "extract_negative",
+        "Extract the Celsius reading from: 'sensor C: -5 C'. Return only the number.",
+        "-5",
+    ),
+    Probe(
+        2,
+        "mean_20",
+        "Compute the arithmetic mean of these Celsius readings: 18, 20, 22. "
+        "Return only the number.",
+        "20",
+    ),
+    Probe(
+        2,
+        "mean_60",
+        "Compute the arithmetic mean of these Celsius readings: 55, 60, 65. "
+        "Return only the number.",
+        "60",
+    ),
+    Probe(
+        2,
+        "mean_85",
+        "Compute the arithmetic mean of these Celsius readings: 80, 85, 90. "
+        "Return only the number.",
+        "85",
+    ),
+    Probe(
+        3,
+        "normal_edge",
+        "Classify 59.9 C: normal if below 60; warning if 60 to below 80; "
+        "critical if 80 or above. Return only the class.",
+        "normal",
+    ),
+    Probe(
+        3,
+        "warning_edge",
+        "Classify 60 C: normal if below 60; warning if 60 to below 80; "
+        "critical if 80 or above. Return only the class.",
+        "warning",
+    ),
+    Probe(
+        3,
+        "critical_edge",
+        "Classify 80 C: normal if below 60; warning if 60 to below 80; "
+        "critical if 80 or above. Return only the class.",
+        "critical",
+    ),
 )
-
-Generate = Callable[[str], str]
 
 
 def ollama_generator(model: str, *, timeout: float = 30.0) -> Generate:
