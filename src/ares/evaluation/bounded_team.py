@@ -9,6 +9,8 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
+from statistics import mean
+from time import monotonic
 from typing import cast
 
 from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
@@ -111,7 +113,39 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--model", default="llama3.2:3b")
     args = parser.parse_args(argv)
     readings = tuple(f"{value} C" for value in cast("list[str]", args.readings))
-    report = evaluate_team(readings, ollama_generator(args.model))
+    generate = ollama_generator(args.model)
+    latencies_ms: list[float] = []
+
+    def timed_generate(question: str) -> str:
+        started = monotonic()
+        try:
+            return generate(question)
+        finally:
+            latencies_ms.append((monotonic() - started) * 1000)
+
+    started = monotonic()
+    report = evaluate_team(readings, timed_generate)
+    wall_time_ms = (monotonic() - started) * 1000
+    extraction_attempts = len(report.extracted)
+    extraction_successes = extraction_attempts - int("extractor_mismatch" in report.errors)
+    arithmetic_attempts = int(report.model_mean is not None)
+    arithmetic_successes = int(report.status == "verified")
+    attempted = extraction_attempts + arithmetic_attempts
+    passed = extraction_successes + arithmetic_successes
+    statistics = {
+        "model_calls": len(latencies_ms),
+        "extraction_correct": extraction_successes,
+        "extraction_total": extraction_attempts,
+        "arithmetic_correct": arithmetic_successes,
+        "arithmetic_total": arithmetic_attempts,
+        "model_steps_correct": passed,
+        "model_steps_total": attempted,
+        "model_steps_accuracy": round(passed / attempted, 4) if attempted else 0.0,
+        "latency_mean_ms": round(mean(latencies_ms), 2) if latencies_ms else None,
+        "latency_max_ms": round(max(latencies_ms), 2) if latencies_ms else None,
+        "wall_time_ms": round(wall_time_ms, 2),
+        "execution_mode": "sequential",
+    }
     print(
         json.dumps(
             {
@@ -123,6 +157,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "errors": report.errors,
                 "authority": "deterministic_reviewer",
                 "device_actions": "disabled",
+                "statistics": statistics,
             },
             indent=2,
         )
