@@ -95,3 +95,24 @@ multi-model orchestration or parallel execution.
 The next step is independent unseen-task testing and concurrency
 profiling on the user's laptop. We will not broaden the AI's authority
 unless those tests justify it.
+
+## Sequential vs concurrent local Ollama comparison
+
+Once the bounded demo is validated, run the read-only comparison:
+
+```powershell
+uv run python -m ares.evaluation.ollama_parallel_benchmark --model llama3.2:3b --parallelism 3 --repeats 2 --output parallel-report.json
+```
+
+The benchmark issues the same six basic unseen probes in sequential and
+concurrent batches. Each batch is repeated twice. The report records
+per-task answers, independent correctness checks, model errors, mean/median
+and maximum latency, elapsed wall time, and measured speedup. The tests
+have no hardware permissions and require no paid services.
+
+**Interpret carefully:** these are six fixed prompts run in a fixed order;
+they are not a statistical proof of reliability. Parallelism can increase
+memory pressure and may be slower when Ollama serializes requests. The two
+modes run in a fixed order and can be affected by model warm-up, caching
+and hardware thermal conditions. If either mode produces wrong answers,
+do not use its speedup as a reason to enable concurrency.
