@@ -88,12 +88,20 @@ def evaluate_team(readings: Sequence[str], generate: Generate) -> BoundedTeamRes
     checked_mean = sum(expected, Decimal(0)) / Decimal(3)
     if _number(model_mean) != checked_mean:
         return BoundedTeamResult(
-            "rejected", tuple(extracted), model_mean, str(checked_mean), None,
+            "rejected",
+            tuple(extracted),
+            model_mean,
+            str(checked_mean),
+            None,
             ("arithmetic_mismatch",),
         )
     return BoundedTeamResult(
-        "verified", tuple(extracted), model_mean, str(checked_mean),
-        _severity(checked_mean), (),
+        "verified",
+        tuple(extracted),
+        model_mean,
+        str(checked_mean),
+        _severity(checked_mean),
+        (),
     )
 
 
