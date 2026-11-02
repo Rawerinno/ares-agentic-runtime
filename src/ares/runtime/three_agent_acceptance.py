@@ -141,8 +141,11 @@ def _investigator_confusion(
             proposals = row.get("bounded_proposals")
             if isinstance(proposals, list):
                 for item in cast("list[object]", proposals):
-                    if isinstance(item, dict) and cast("dict[str, object]", item).get("role") == "investigator":
-                        candidate = cast("dict[str, object]", item).get("proposed")
+                    if not isinstance(item, dict):
+                        continue
+                    fields = cast("dict[str, object]", item)
+                    if fields.get("role") == "investigator":
+                        candidate = fields.get("proposed")
                         if isinstance(candidate, str):
                             proposed = candidate
                         break
