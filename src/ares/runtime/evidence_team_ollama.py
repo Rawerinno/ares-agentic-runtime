@@ -8,9 +8,7 @@ from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import RequestLimits
 
 
-def ollama_evidence_team_generator(
-    model: str, *, timeout: float = 30.0
-) -> Callable[[str], str]:
+def ollama_evidence_team_generator(model: str, *, timeout: float = 30.0) -> Callable[[str], str]:
     """Make three independent read-only calls; return untrusted JSON for validation."""
     if not model.strip() or len(model) > 120:
         raise ValueError("model must contain 1..120 nonblank characters")
@@ -19,8 +17,12 @@ def ollama_evidence_team_generator(
     values = {
         "investigator": (
             "followup",
-            ("validate_sensor", "collect_more_samples", "inspect_thermal_system",
-             "continue_monitoring"),
+            (
+                "validate_sensor",
+                "collect_more_samples",
+                "inspect_thermal_system",
+                "continue_monitoring",
+            ),
         ),
         "planner": (
             "action",
