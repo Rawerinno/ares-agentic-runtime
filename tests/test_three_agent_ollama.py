@@ -32,9 +32,7 @@ class FakeTransport:
         key = cast("str", required[0])
         severity = "warning"
         content: object = {
-            key: {"hypothesis": "thermal_load", "plan": "inspect", "verdict": "consistent"}[
-                key
-            ],
+            key: {"hypothesis": "thermal_load", "plan": "inspect", "verdict": "consistent"}[key],
             "severity": severity,
         }
         if self.override is not None:
