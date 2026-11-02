@@ -1,6 +1,7 @@
 """Three-role evidence review checks faulty peers without granting execution authority."""
 
 import json
+from typing import cast
 
 import pytest
 
@@ -135,10 +136,11 @@ def test_critic_receives_no_governor_acceptance_flags_or_expected_answers() -> N
     assert len(captured) == 1
     context: object = json.loads(captured[0].split("Context: ", 1)[1])
     assert isinstance(context, dict)
-    prior = context["prior_proposals"]
+    prior = cast("dict[str, object]", context)["prior_proposals"]
     assert isinstance(prior, list)
-    assert len(prior) == 2
-    assert all(set(item) == {"role", "proposed"} for item in prior)
+    items = cast("list[dict[str, str]]", prior)
+    assert len(items) == 2
+    assert all(set(item) == {"role", "proposed"} for item in items)
     assert "accepted" not in captured[0]
     assert "policy_mismatch" not in captured[0]
 
