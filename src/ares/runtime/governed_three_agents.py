@@ -94,19 +94,19 @@ class GovernedThreeAgentTeam:
                 "For healthy finite telemetry: normal severity => stable; "
                 "warning or critical severity => thermal_load. "
                 "Unhealthy or missing/non-finite sensor => sensor_fault. "
-                "Output exactly hypothesis and severity."
+                "Use hypothesis from the allowed set."
             ),
             "planner": (
                 "Map authoritative severity to advisory plan: "
                 "normal => monitor; warning => inspect; critical => human_review. "
                 "Do not substitute request_review, investigate, or other words. "
-                "Output exactly plan and severity."
+                "Use plan from the allowed set."
             ),
             "critic": (
                 "Prior roles shown here have already been validated by ARES. "
                 "Return verdict=consistent when they agree with authoritative severity. "
                 "Return verdict=inconsistent only for a genuine contradiction. "
-                "Output exactly verdict and severity."
+                "Use verdict from the allowed set."
             ),
         }
         handoffs: list[RoleHandoff] = []
@@ -133,9 +133,13 @@ class GovernedThreeAgentTeam:
                 f"ROLE={role}. {instruction}. {rules[role]} "
                 "You have NO tool permissions and must not change severity. "
                 "Respond with exactly one JSON object containing "
-                + ("ONLY the role-specific field, no severity field. " if self.role_only else "the role-specific field AND severity. ")
+                + (
+                    "ONLY the role-specific field, no severity field. "
+                    if self.role_only
+                    else "the role-specific field AND severity. "
+                )
                 + "No Markdown or prose. "
-                f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
+                + f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
             )
             calls += 1
             try:
