@@ -6,7 +6,7 @@ Safety outcomes are not inferred from the model; followups are advisory only.
 import argparse
 import json
 from collections.abc import Callable, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic
 
