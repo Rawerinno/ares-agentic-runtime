@@ -189,3 +189,52 @@ def test_cli_runs_three_offline_roles_without_ollama(
         "critic",
         "reviewer",
     ]
+
+
+@pytest.mark.parametrize(
+    ("response", "expected_reason"),
+    [
+        ('{"hypothesis":"stable","severity":"warning"}', "hypothesis_mismatch"),
+        ('{"hypothesis":"thermal_load","severity":"normal"}', "severity_mismatch"),
+        ('{"plan":"monitor","severity":"warning"}', "invalid_fields"),
+        ('{"hypothesis":"thermal_load","severity":"warning","actuate":"yes"}', "invalid_fields"),
+        ('{"hypothesis":15,"severity":"warning"}', "invalid_types"),
+        ("unparseable", "invalid_json"),
+        ('{"hypothesis":"thermal_load","severity":"warning"}' + " " * 300, "oversized_response"),
+    ],
+)
+def test_bounded_rejection_exposes_only_fixed_diagnostic_codes(
+    tmp_path: Path, response: str, expected_reason: str
+) -> None:
+    supervisor, store = setup(tmp_path, 65)
+    team = GovernedThreeAgentTeam(lambda _prompt: response)
+    report = run_incident(
+        supervisor, store, task_id="diagnostic", agent_id="observer", tool_id="sensor", team=team
+    )
+    assert report.handoffs[-2].finding == f"Rejected: policy_mismatch:{expected_reason}"
+    assert "actuate" not in report.handoffs[-2].finding
+    assert report.severity == "warning"
+    assert report.device_actions == "disabled"
+
+
+def test_prompts_are_role_specific_not_a_shared_confusing_menu(tmp_path: Path) -> None:
+    from ares.runtime.governed_three_agents import reference_generate
+
+    supervisor, store = setup(tmp_path, 65)
+    prompts: list[str] = []
+
+    def inspect(prompt: str) -> str:
+        prompts.append(prompt)
+        return reference_generate(prompt)
+
+    report = run_incident(
+        supervisor, store, task_id="prompts", agent_id="observer", tool_id="sensor",
+        team=GovernedThreeAgentTeam(inspect),
+    )
+    assert [item.finding.startswith("Validated:") for item in report.handoffs[3:6]] == [
+        True, True, True
+    ]
+    assert len(prompts) == 3
+    assert "normal => monitor" not in prompts[0]
+    assert "warning => inspect" in prompts[1]
+    assert "verdict=consistent" in prompts[2]
