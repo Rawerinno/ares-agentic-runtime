@@ -1,6 +1,5 @@
 """Bounded extraction scheduler tests (offline, no Ollama or network)."""
 
-from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 import pytest
