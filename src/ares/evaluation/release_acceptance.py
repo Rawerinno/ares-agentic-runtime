@@ -61,9 +61,7 @@ def acceptance_report() -> dict[str, object]:
         ):
             checks[f"scenario_{center}"] = False
         completed += 1
-        audited = record_bounded_execution(
-            audited, result, policy, call_count=4, elapsed_ms=1.0
-        )
+        audited = record_bounded_execution(audited, result, policy, call_count=4, elapsed_ms=1.0)
     verify_entries(audited)
     checks["scenario_accuracy"] = completed == 121 and model_calls == 484
     checks["audit_chain"] = len(audited) == completed and audited[-1].sequence == completed
@@ -75,8 +73,7 @@ def acceptance_report() -> dict[str, object]:
 
     bad = evaluate_team(("55 C", "60 C", "65 C"), bad_extraction)
     checks["extraction_fail_closed"] = (
-        bad.status == "rejected" and bad.severity is None
-        and bad.errors == ("extractor_mismatch",)
+        bad.status == "rejected" and bad.severity is None and bad.errors == ("extractor_mismatch",)
     )
 
     def bad_arithmetic(question: str) -> str:
@@ -84,8 +81,7 @@ def acceptance_report() -> dict[str, object]:
 
     bad = evaluate_team(("55 C", "60 C", "65 C"), bad_arithmetic)
     checks["arithmetic_fail_closed"] = (
-        bad.status == "rejected" and bad.severity is None
-        and bad.errors == ("arithmetic_mismatch",)
+        bad.status == "rejected" and bad.severity is None and bad.errors == ("arithmetic_mismatch",)
     )
     _, agreed = independent_mean_review(("55 C", "60 C", "65 C"), "60", lambda _: "61")
     checks["independent_review_rejects_wrong"] = not agreed
@@ -96,9 +92,7 @@ def acceptance_report() -> dict[str, object]:
         raise RuntimeError("offline")
 
     bad = evaluate_team(("55 C", "60 C", "65 C"), unavailable)
-    checks["provider_failure_fail_closed"] = (
-        bad.status == "rejected" and bad.severity is None
-    )
+    checks["provider_failure_fail_closed"] = bad.status == "rejected" and bad.severity is None
     try:
         evaluate_team(("1e999999999 C", "60 C", "65 C"), _stub)
     except ValueError:
