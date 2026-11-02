@@ -132,7 +132,7 @@ def test_confusion_redacts_untrusted_output() -> None:
         return '{"followup":"validate_sensor","payload":"' + secret + '"}'
 
     report = evaluate_evidence(injected)
-    assert report["model_accepted"] == 2
+    assert report["model_accepted"] == 0
     results = report["results"]
     assert isinstance(results, list)
     assert all(
