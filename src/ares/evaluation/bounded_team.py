@@ -180,7 +180,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     if args.audit_file is not None:
         previous = read_audit(args.audit_file)
         audit = record_bounded_execution(
-            previous, report, decision, call_count=len(latencies_ms),
+            previous,
+            report,
+            decision,
+            call_count=len(latencies_ms),
             elapsed_ms=wall_time_ms,
         )
         extend_audit(args.audit_file, previous, audit)
