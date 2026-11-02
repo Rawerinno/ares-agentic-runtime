@@ -117,6 +117,51 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         raise ValueError("stored report cannot contain executable authority")
     if type(data["team_accepted"]) is not bool:
         raise ValueError("stored team acceptance malformed")
+    if data["severity"] not in ("normal", "warning", "critical"):
+        raise ValueError("stored risk severity invalid")
+    if data["evidence_state"] not in (
+        "invalid_telemetry", "insufficient_history",
+        "rising_temperature", "no_confirmed_rise",
+    ):
+        raise ValueError("stored evidence state invalid")
+    if data["authorized_action"] not in (
+        "monitor", "collect_evidence", "inspect", "validate_sensor", "human_review",
+    ):
+        raise ValueError("stored risk action invalid")
+    expected_by_role = (
+        {"validate_sensor", "collect_more_samples", "inspect_thermal_system", "continue_monitoring"},
+        {"monitor", "collect_evidence", "inspect", "validate_sensor", "human_review"},
+        {"consistent", "inconsistent"},
+    )
+    diagnostic_codes = {
+        "accepted", "policy_mismatch", "oversized_response",
+        "invalid_json", "invalid_shape", "invalid_fields",
+        "invalid_value", "model_exception",
+    }
+    for item, allowed_values in zip(entries, expected_by_role, strict=True):
+        if item.expected not in allowed_values:
+            raise ValueError("stored expected role category invalid")
+        if item.proposed not in allowed_values and item.proposed != "unrecognized":
+            raise ValueError("stored proposed role category invalid")
+        if item.diagnostic not in diagnostic_codes:
+            raise ValueError("stored role diagnostic invalid")
+        if item.accepted != (item.proposed == item.expected and item.diagnostic == "accepted"):
+            raise ValueError("stored role acceptance inconsistent")
+    if data["team_accepted"] != all(item.accepted for item in entries):
+        raise ValueError("stored team acceptance inconsistent")
+    expected_action = (
+        "validate_sensor"
+        if data["evidence_state"] == "invalid_telemetry"
+        else "human_review"
+        if data["severity"] == "critical"
+        else "inspect"
+        if data["severity"] == "warning" or data["evidence_state"] == "rising_temperature"
+        else "collect_evidence"
+        if data["evidence_state"] == "insufficient_history"
+        else "monitor"
+    )
+    if data["authorized_action"] != expected_action:
+        raise ValueError("stored action inconsistent with governed risk")
     return EvidenceTeamResult(
         cast("str", data["severity"]),
         cast("str", data["evidence_state"]),
@@ -182,6 +227,7 @@ class DurableEvidenceStore:
     def complete(self, task_id: str, report: EvidenceTeamResult) -> None:
         encoded = json.dumps(asdict(report), sort_keys=True, allow_nan=False)
         digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        _decode_report(encoded, digest)
         with closing(sqlite3.connect(self.path, timeout=3)) as db:
             db.execute("BEGIN IMMEDIATE")
             cursor = db.execute(
