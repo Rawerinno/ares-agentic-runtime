@@ -69,6 +69,23 @@ def _meter(generate: Generate, counts: dict[str, RoleStat], case_calls: list[str
     return measured
 
 
+
+def _isolated_target(
+    generate: Generate,
+    counts: dict[str, RoleStat],
+    target_role: str,
+    calls: list[str],
+) -> Generate:
+    """Only target role reaches the real generator; peers use a reference."""
+    measured = _meter(generate, counts, calls)
+
+    def generate_target(question: str) -> str:
+        role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+        return measured(question) if role == target_role else reference_generate(question)
+
+    return generate_target
+
+
 def evaluate_three_roles(
     generate: Generate,
     workdir: Path,
@@ -161,11 +178,9 @@ def evaluate_three_roles(
                 for target_role in role_names:
                     calls: list[str] = []
 
-                    def isolated(question: str) -> str:
-                        queried_role = question.split("ROLE=", 1)[1].split(".", 1)[0]
-                        if queried_role != target_role:
-                            return reference_generate(question)
-                        return _meter(generate, isolated_counts, calls)(question)
+                    isolated = _isolated_target(
+                        generate, isolated_counts, target_role, calls
+                    )
 
                     probe = GovernedThreeAgentTeam(
                         isolated, identity="isolated-probe-v1", role_only=role_only
