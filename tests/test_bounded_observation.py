@@ -99,7 +99,7 @@ def test_cli_reports_advisory_failure_and_correct_authority(
         return extract_or_wrong_mean
 
     monkeypatch.setattr(bounded_observation, "ollama_generator", generator)
-    assert bounded_observation.run(["61.5", "62.5", "63.5", "--evaluate-arithmetic"]) == 0
+    assert bounded_observation.run(["61.5", "62.5", "63.5", "--input-mode", "llm", "--evaluate-arithmetic"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "verified"
     assert payload["severity"] == "warning"
