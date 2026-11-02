@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import cast
 
+from ares.intelligence.decisions import ModelAdapter
+from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus
 from ares.supervisor import Assessment, Severity, Supervisor
 
 
@@ -40,8 +42,8 @@ class TaskConflictError(ValueError):
     """Existing task has a different request or is actively running."""
 
 
-def _request_hash(agent_id: str, tool_id: str) -> str:
-    payload = json.dumps([agent_id, tool_id], separators=(",", ":"))
+def _request_hash(agent_id: str, tool_id: str, advisor_enabled: bool) -> str:
+    payload = json.dumps([agent_id, tool_id, advisor_enabled], separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -207,9 +209,12 @@ def run_incident(
     agent_id: str,
     tool_id: str,
     recover: bool = False,
+    advisor: ModelAdapter | None = None,
 ) -> IncidentReport:
-    """Run four bounded roles, persist result, or mark failure for explicit retry."""
-    previous = store.claim(task_id, _request_hash(agent_id, tool_id), recover=recover)
+    """Run bounded roles, persist result, or mark failure for explicit retry."""
+    previous = store.claim(
+        task_id, _request_hash(agent_id, tool_id, advisor is not None), recover=recover
+    )
     if previous is not None:
         return previous
     try:
@@ -219,7 +224,26 @@ def run_incident(
             _diagnose(assessment),
             _plan(assessment),
         )
-        final = (*handoffs, _review(assessment, handoffs[-1]))
+        advice: tuple[RoleHandoff, ...] = ()
+        if advisor is not None:
+            outcome = BoundedProposalEngine(advisor).evaluate(assessment)
+            if outcome.status is OutcomeStatus.ACCEPTED and outcome.decision is not None:
+                advice = (
+                    RoleHandoff(
+                        "model_advisor",
+                        f"Validated advisory kind: {outcome.decision.kind.value}",
+                        "Model has no permission to execute device operations",
+                    ),
+                )
+            else:
+                advice = (
+                    RoleHandoff(
+                        "model_advisor",
+                        f"Untrusted proposal rejected: {outcome.error_code}",
+                        "Follow deterministic assessment; no model actuation",
+                    ),
+                )
+        final = (*handoffs, *advice, _review(assessment, handoffs[-1]))
         report = IncidentReport(
             task_id=task_id,
             device_id=assessment.snapshot.device_id,
