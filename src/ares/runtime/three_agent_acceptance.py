@@ -8,6 +8,7 @@ import argparse
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from math import isfinite
 from pathlib import Path
 from statistics import mean, median
 from tempfile import TemporaryDirectory
@@ -128,11 +129,9 @@ def _investigator_confusion(
         scenario = row["scenario"]
         if not isinstance(scenario, str):
             continue
-        expected = (
-            "sensor_fault" if scenario == "invalid_sensor"
-            else "stable" if scenario in ("normal_low", "negative", "normal_boundary")
-            else "thermal_load"
-        )
+        expected = row.get("expected_hypothesis")
+        if expected not in ("sensor_fault", "stable", "thermal_load"):
+            continue
         proposed: str | None = None
         if isolated_results:
             if row.get("target_role") != "investigator":
@@ -183,6 +182,11 @@ def evaluate_three_roles(
     started = monotonic()
     for case in scenarios:
         for repetition in range(repeats):
+            expected_hypothesis = (
+                "sensor_fault" if not isfinite(case.temperature)
+                else "stable" if case.expected == "normal"
+                else "thermal_load"
+            )
             case_calls: list[str] = []
             case_proposals: list[dict[str, str]] = []
 
@@ -268,6 +272,7 @@ def evaluate_three_roles(
                             "scenario": case.name,
                             "repeat": repetition + 1,
                             "target_role": target_role,
+                            "expected_hypothesis": expected_hypothesis,
                             "accepted": accepted,
                             "diagnostic": (
                                 own.finding if own is not None and not accepted else None
@@ -282,6 +287,7 @@ def evaluate_three_roles(
                 {
                     "scenario": case.name,
                     "repeat": repetition + 1,
+                    "expected_hypothesis": expected_hypothesis,
                     "severity": outcome.severity,
                     "governed_safe": safe,
                     "team_accepted": team_pass,
