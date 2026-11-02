@@ -24,6 +24,20 @@ def reference_followup(report: EvidenceReport) -> str:
     return json.dumps({"followup": report.suggested_followup})
 
 
+def bounded_followup(answer: str) -> str:
+    """Extract only an allowlisted model value; never return model prose."""
+    if len(answer) > 256:
+        return "unrecognized"
+    try:
+        raw: object = json.loads(answer)
+    except (ValueError, TypeError):
+        return "unrecognized"
+    if not isinstance(raw, dict):
+        return "unrecognized"
+    value = cast("dict[str, object]", raw).get("followup")
+    return value if type(value) is str and value in FOLLOWUPS else "unrecognized"
+
+
 def parse_followup(answer: str, report: EvidenceReport) -> tuple[bool, str]:
     """Validate untrusted proposal, exposing only finite allowlisted categories."""
     if len(answer) > 256:
