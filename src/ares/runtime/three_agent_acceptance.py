@@ -89,6 +89,9 @@ def evaluate_three_roles(
     governed_correct = 0
     full_team_pass = 0
     replay_ok = 0
+    rejection_counts: dict[str, dict[str, int]] = {
+        role: {} for role in role_names
+    }
     started = monotonic()
     for case in scenarios:
         for repetition in range(repeats):
@@ -132,6 +135,10 @@ def evaluate_three_roles(
             for handoff in role_handoffs:
                 if handoff.finding.startswith("Validated:"):
                     counts[handoff.role].accepted += 1
+                elif handoff.finding.startswith("Rejected:"):
+                    code = handoff.finding.removeprefix("Rejected: ")
+                    bucket = rejection_counts[handoff.role]
+                    bucket[code] = bucket.get(code, 0) + 1
             team_pass = len(role_handoffs) == 3 and all(
                 h.finding.startswith("Validated:") for h in role_handoffs
             )
@@ -185,6 +192,7 @@ def evaluate_three_roles(
         "team_acceptance_rate": round(full_team_pass / count, 4),
         "idempotent_replays": replay_ok,
         "role_metrics": role_summary,
+        "rejection_counts": rejection_counts,
         "results": details,
         "wall_time_ms": round((monotonic() - started) * 1000, 2),
         "safety_authority": "deterministic_supervisor",
