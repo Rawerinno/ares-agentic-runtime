@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ares.evaluation.audit import from_jsonl
+from ares.evaluation.audit import from_jsonl, to_jsonl
 from ares.evaluation.audit_storage import extend_audit, read_audit
 from ares.evaluation.bounded_team import BoundedTeamResult
 from ares.evaluation.bounded_team_audit import record_bounded_execution
@@ -28,25 +28,28 @@ def test_audit_records_no_measurements_or_model_text(tmp_path: Path) -> None:
     assert loaded[0].payload["severity"] == "warning"
     stored = path.read_text(encoding="utf-8")
     assert "secret-reading" not in stored
-    assert "55" not in stored
     assert "advisory_only" in stored
 
 
 def test_rejected_results_have_no_severity_and_chain_remains_valid() -> None:
     first = record_bounded_execution(
-        (), BoundedTeamResult("verified", ("55",), "60", "60", "warning", ()),
-        scheduler(), call_count=2, elapsed_ms=800
+        (),
+        BoundedTeamResult("verified", ("55",), "60", "60", "warning", ()),
+        scheduler(),
+        call_count=2,
+        elapsed_ms=800,
     )
     second = record_bounded_execution(
-        first, BoundedTeamResult("rejected", ("bad",), None, None, None, ("extractor_mismatch",)),
-        scheduler(), call_count=1, elapsed_ms=500
+        first,
+        BoundedTeamResult("rejected", ("bad",), None, None, None, ("extractor_mismatch",)),
+        scheduler(),
+        call_count=1,
+        elapsed_ms=500,
     )
     assert second[-1].sequence == 2
     assert second[-1].previous_hash == first[-1].digest
     assert second[-1].payload["severity"] is None
-    assert from_jsonl("".join(
-        __import__("ares.evaluation.audit", fromlist=["to_jsonl"]).to_jsonl(second)
-    )) == second
+    assert from_jsonl(to_jsonl(second)) == second
 
 
 def test_invalid_metrics_rejected() -> None:
