@@ -133,20 +133,25 @@ def choose_concurrency(
     )
 
 
-def run(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Offline, conservative ARES concurrency policy")
-    parser.add_argument("reports", nargs="*", type=Path, help="Local benchmark JSON files")
-    parser.add_argument("--candidate", type=int, default=2)
-    args = parser.parse_args(argv)
+def load_reports(paths: Sequence[Path]) -> list[Mapping[str, object]]:
+    """Read bounded local benchmark JSON; never fetch remote data."""
     reports: list[Mapping[str, object]] = []
-    for path in args.reports:
+    for path in paths:
         if path.stat().st_size > 2_000_000:
             raise ValueError("benchmark report is too large")
         result: object = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(result, dict):
             raise ValueError("benchmark must be a JSON object")
         reports.append(cast("dict[str, object]", result))
-    decision = choose_concurrency(reports, candidate=args.candidate)
+    return reports
+
+
+def run(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Offline, conservative ARES concurrency policy")
+    parser.add_argument("reports", nargs="*", type=Path, help="Local benchmark JSON files")
+    parser.add_argument("--candidate", type=int, default=2)
+    args = parser.parse_args(argv)
+    decision = choose_concurrency(load_reports(args.reports), candidate=args.candidate)
     print(json.dumps(asdict(decision), indent=2))
     return 0
 
