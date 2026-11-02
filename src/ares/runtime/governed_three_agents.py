@@ -86,10 +86,14 @@ class GovernedThreeAgentTeam:
             }
             question = (
                 f"ROLE={role}. {instruction}. You have NO tool permissions. "
-                "The severity is fixed by Python and must not change. "
-                f"Trusted context: {json.dumps(trusted, allow_nan=False)}. "
-                "Respond with ONLY a JSON object (as your answer string) "
-                f"containing exactly these keys and values: {json.dumps(expected)}."
+                "Severity is fixed by Python. Allowed investigator hypotheses: "
+                "stable, thermal_load, sensor_fault. Allowed planner plans: "
+                "monitor, inspect, human_review. Allowed critic verdicts: "
+                "consistent, inconsistent. Use only the two keys applicable "
+                "to your role plus the severity field, with no extra keys. "
+                "Your answer must be a JSON object string, not prose. "
+                f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
+            )
             )
             calls += 1
             try:
