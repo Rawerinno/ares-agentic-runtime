@@ -34,6 +34,9 @@ def render_dashboard(reports: Sequence[IncidentReport], statuses: Mapping[str, i
     )
     items: list[str] = []
     for report in reports:
+        temperature_text = (
+            "Unavailable" if report.temperature_c is None else f"{report.temperature_c} °C"
+        )
         rows = "".join(
             "<tr>"
             f"<td>{_safe(role.role)}</td>"
@@ -47,7 +50,7 @@ def render_dashboard(reports: Sequence[IncidentReport], statuses: Mapping[str, i
             f"<h2>{_safe(report.task_id)}</h2>"
             f"<p><b>Device:</b> {_safe(report.device_id)}"
             f" · <b>Step:</b> {_safe(report.observed_step)}"
-            f" · <b>Temperature:</b> {_safe(report.temperature_c)} °C"
+            f" · <b>Temperature:</b> {_safe(temperature_text)}"
             f" · <b>Severity:</b> {_safe(report.severity)}"
             f" · <b>Outcome:</b> {_safe(report.outcome)}</p>"
             "<details><summary>Inspect agent handoffs</summary>"
