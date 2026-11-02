@@ -89,3 +89,26 @@ JavaScript, external resources, sensitive credentials or physical device
 controls are provided. All stored text is HTML-escaped and the document
 uses a restrictive Content Security Policy. It is not an authenticated
 operations service and does not auto-refresh.
+
+## Automated offline MVP acceptance
+
+```powershell
+uv run python -m ares.runtime.mvp_evaluation --scenarios 60 --output ares-mvp-evaluation.json
+```
+
+This evaluates 60 deterministic simulated incidents: 20 normal, 20
+warning, and 20 critical. Every task gets an advisory handoff (a
+local reference model or a deliberately malformed proposal), a
+deterministic safety review, an immutable SQLite record, and an
+idempotent replay. Additional tests inject a persistent sensor fault,
+attempt recovery until the three-attempt budget is exhausted, and
+check that an unauthorized agent cannot read the gateway.
+
+The JSON report includes total scenarios, correct classifications,
+role handoffs, correctly rejected model proposals, severity counts,
+idempotent replays, failure-recovery checks, mean/median/p95 execution
+latencies, and a clear `offline_simulation_reference_model` scope.
+
+The test uses **no Ollama** and does not validate real-device
+performance. A local end-to-end session with the actual Llama model
+will be requested only once the remainder of the MVP is consolidated.
