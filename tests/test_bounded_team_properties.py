@@ -26,9 +26,7 @@ from ares.evaluation.bounded_team import evaluate_team
         ("200", "critical"),
     ],
 )
-def test_threshold_boundaries_are_deterministic(
-    temperature: str, severity: str
-) -> None:
+def test_threshold_boundaries_are_deterministic(temperature: str, severity: str) -> None:
     # Three identical readings make the expected average unambiguous.
     def model(question: str) -> str:
         if "Extract" in question:
@@ -45,10 +43,7 @@ def test_many_simple_deterministic_cases() -> None:
     random = Random(2026)
     for _ in range(100):
         temperature = random.randint(-100, 150)
-        expected = (
-            "critical" if temperature >= 80 else "warning" if temperature >= 60
-            else "normal"
-        )
+        expected = "critical" if temperature >= 80 else "warning" if temperature >= 60 else "normal"
 
         def model(_question: str, value: int = temperature) -> str:
             return str(value)
