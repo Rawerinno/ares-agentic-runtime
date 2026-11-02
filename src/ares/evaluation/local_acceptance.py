@@ -59,6 +59,26 @@ def _grade(raw: str, expected: str) -> bool:
     return actual_number.is_finite() and actual_number == expected_number
 
 
+def _measure(
+    generate: Generate, calls: list[tuple[str, str, float, bool]]
+) -> Generate:
+    """Build a per-scenario measurement wrapper without sharing captured state."""
+
+    def measured(prompt: str) -> str:
+        role = _role(prompt)
+        stamp = monotonic()
+        try:
+            response = generate(prompt)
+        except Exception:
+            elapsed = (monotonic() - stamp) * 1000
+            calls.append((role, "", elapsed, True))
+            raise
+        calls.append((role, response, (monotonic() - stamp) * 1000, False))
+        return response
+
+    return measured
+
+
 def run_suite(
     generate: Generate,
     *,
@@ -82,17 +102,7 @@ def run_suite(
         for repeat in range(repeats):
             calls: list[tuple[str, str, float, bool]] = []
 
-            def measured(prompt: str) -> str:
-                role = _role(prompt)
-                stamp = monotonic()
-                try:
-                    response = generate(prompt)
-                except Exception:
-                    elapsed = (monotonic() - stamp) * 1000
-                    calls.append((role, "", elapsed, True))
-                    raise
-                calls.append((role, response, (monotonic() - stamp) * 1000, False))
-                return response
+            measured = _measure(generate, calls)
 
             readings = tuple(f"{v} C" for v in case.readings)
             outcome = evaluate_team(readings, measured)
