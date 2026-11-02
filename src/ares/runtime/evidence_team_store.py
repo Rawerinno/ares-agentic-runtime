@@ -265,6 +265,20 @@ class DurableEvidenceStore:
             )
             db.commit()
 
+    def status_counts(self) -> dict[str, int]:
+        """Read-only, bounded task state counts; does not rerun models."""
+        with closing(sqlite3.connect(self.path, timeout=3)) as db:
+            rows = db.execute(
+                "SELECT status, COUNT(*) FROM evidence_tasks GROUP BY status"
+            ).fetchall()
+        allowed = {"running", "failed", "completed"}
+        summary: dict[str, int] = {}
+        for status, amount in rows:
+            if status not in allowed:
+                raise ValueError("stored evidence task has invalid status")
+            summary[str(status)] = int(amount)
+        return summary
+
     def completed(self, *, limit: int = 100) -> tuple[tuple[str, EvidenceTeamResult], ...]:
         if not 1 <= limit <= 1000:
             raise ValueError("limit must be 1..1000")
