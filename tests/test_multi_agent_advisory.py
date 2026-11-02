@@ -14,9 +14,7 @@ from ares.supervisor import Supervisor
 
 def setup(tmp_path: Path, temperature: float) -> tuple[Supervisor, SqliteTaskStore]:
     gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
-    gateway.register_sensor(
-        "sensor", DeviceSimulator("sim", initial_temperature_c=temperature)
-    )
+    gateway.register_sensor("sensor", DeviceSimulator("sim", initial_temperature_c=temperature))
     return Supervisor(gateway), SqliteTaskStore(tmp_path / "tasks.sqlite")
 
 
@@ -33,13 +31,21 @@ def test_reference_model_adds_read_only_advisory(
 ) -> None:
     supervisor, store = setup(tmp_path, temperature)
     result = run_incident(
-        supervisor, store, task_id="advised", agent_id="observer",
-        tool_id="sensor", advisor=LocalReferenceModel(),
+        supervisor,
+        store,
+        task_id="advised",
+        agent_id="observer",
+        tool_id="sensor",
+        advisor=LocalReferenceModel(),
     )
     assert result.severity == severity
     assert result.device_actions == "disabled"
     assert tuple(item.role for item in result.handoffs) == (
-        "observer", "diagnostician", "planner", "model_advisor", "reviewer"
+        "observer",
+        "diagnostician",
+        "planner",
+        "model_advisor",
+        "reviewer",
     )
     assert kind in result.handoffs[-2].finding
 
@@ -56,8 +62,12 @@ def test_invalid_model_output_cannot_override_severity(tmp_path: Path) -> None:
             }
 
     result = run_incident(
-        supervisor, store, task_id="malicious", agent_id="observer",
-        tool_id="sensor", advisor=MaliciousModel(),
+        supervisor,
+        store,
+        task_id="malicious",
+        agent_id="observer",
+        tool_id="sensor",
+        advisor=MaliciousModel(),
     )
     assert result.severity == "critical"
     assert result.outcome == "review_required"
@@ -73,8 +83,12 @@ def test_model_error_still_produces_deterministic_incident(tmp_path: Path) -> No
             raise RuntimeError("offline")
 
     result = run_incident(
-        supervisor, store, task_id="broken", agent_id="observer",
-        tool_id="sensor", advisor=Broken(),
+        supervisor,
+        store,
+        task_id="broken",
+        agent_id="observer",
+        tool_id="sensor",
+        advisor=Broken(),
     )
     assert result.severity == "warning"
     assert "model_exception" in result.handoffs[-2].finding
@@ -86,6 +100,10 @@ def test_replaying_with_changed_advisor_mode_is_rejected(tmp_path: Path) -> None
     run_incident(supervisor, store, task_id="task", agent_id="observer", tool_id="sensor")
     with pytest.raises(TaskConflictError):
         run_incident(
-            supervisor, store, task_id="task", agent_id="observer",
-            tool_id="sensor", advisor=LocalReferenceModel(),
+            supervisor,
+            store,
+            task_id="task",
+            agent_id="observer",
+            tool_id="sensor",
+            advisor=LocalReferenceModel(),
         )
