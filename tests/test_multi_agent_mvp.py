@@ -12,15 +12,12 @@ from ares.supervisor import Supervisor
 
 
 def system(
-    tmp_path: Path, *,
-    temperature: float = 20.0, fault_at_step: int | None = None
+    tmp_path: Path, *, temperature: float = 20.0, fault_at_step: int | None = None
 ) -> tuple[DeviceSimulator, Supervisor, SqliteTaskStore]:
     device = DeviceSimulator(
         "sim-01", initial_temperature_c=temperature, fault_at_step=fault_at_step
     )
-    gateway = ReadOnlyToolGateway(
-        Policy(frozenset({("observer", "sensor", Capability.READ)}))
-    )
+    gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
     gateway.register_sensor("sensor", device)
     return device, Supervisor(gateway), SqliteTaskStore(tmp_path / "tasks.sqlite3")
 
@@ -44,20 +41,19 @@ def test_four_role_handoffs_and_no_actuation(
     assert result.outcome == outcome
     assert result.device_actions == "disabled"
     assert tuple(item.role for item in result.handoffs) == (
-        "observer", "diagnostician", "planner", "reviewer"
+        "observer",
+        "diagnostician",
+        "planner",
+        "reviewer",
     )
     assert store.summary() == {"completed": 1}
 
 
 def test_replay_is_idempotent_and_never_rereads_sensor(tmp_path: Path) -> None:
     device, supervisor, store = system(tmp_path)
-    first = run_incident(
-        supervisor, store, task_id="repeat", agent_id="observer", tool_id="sensor"
-    )
+    first = run_incident(supervisor, store, task_id="repeat", agent_id="observer", tool_id="sensor")
     device.advance()
-    again = run_incident(
-        supervisor, store, task_id="repeat", agent_id="observer", tool_id="sensor"
-    )
+    again = run_incident(supervisor, store, task_id="repeat", agent_id="observer", tool_id="sensor")
     assert first == again
     assert again.observed_step == 0
     assert again.temperature_c == 20
@@ -92,18 +88,30 @@ def test_failed_sensor_read_requires_explicit_recovery(tmp_path: Path) -> None:
     # A recovered task still fails when the simulated fault is persistent.
     with pytest.raises(SimulatedFault):
         run_incident(
-            supervisor, store, task_id="failed", agent_id="observer",
-            tool_id="sensor", recover=True,
+            supervisor,
+            store,
+            task_id="failed",
+            agent_id="observer",
+            tool_id="sensor",
+            recover=True,
         )
     with pytest.raises(SimulatedFault):
         run_incident(
-            supervisor, store, task_id="failed", agent_id="observer",
-            tool_id="sensor", recover=True,
+            supervisor,
+            store,
+            task_id="failed",
+            agent_id="observer",
+            tool_id="sensor",
+            recover=True,
         )
     with pytest.raises(TaskConflictError, match="budget exhausted"):
         run_incident(
-            supervisor, store, task_id="failed", agent_id="observer",
-            tool_id="sensor", recover=True,
+            supervisor,
+            store,
+            task_id="failed",
+            agent_id="observer",
+            tool_id="sensor",
+            recover=True,
         )
     assert device is not None
 
@@ -111,9 +119,7 @@ def test_failed_sensor_read_requires_explicit_recovery(tmp_path: Path) -> None:
 def test_ungranted_read_never_runs_roles(tmp_path: Path) -> None:
     _, supervisor, store = system(tmp_path)
     with pytest.raises(PermissionError):
-        run_incident(
-            supervisor, store, task_id="no-grant", agent_id="untrusted", tool_id="sensor"
-        )
+        run_incident(supervisor, store, task_id="no-grant", agent_id="untrusted", tool_id="sensor")
     assert store.summary() == {"failed": 1}
 
 
