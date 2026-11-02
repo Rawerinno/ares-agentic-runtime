@@ -44,17 +44,18 @@ def test_empty_dashboard_has_no_completed_incidents() -> None:
     assert "Unfinished tasks" in page
 
 
-def test_export_read_only_tasks_and_handoffs(
-    tmp_path: Path, capsys: CaptureFixture[str]
-) -> None:
+def test_export_read_only_tasks_and_handoffs(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
     db = tmp_path / "store.sqlite"
     store = SqliteTaskStore(db)
     device = DeviceSimulator("sim", initial_temperature_c=85)
     gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
     gateway.register_sensor("sensor", device)
     run_incident(
-        Supervisor(gateway), store, task_id="critical-01",
-        agent_id="observer", tool_id="sensor",
+        Supervisor(gateway),
+        store,
+        task_id="critical-01",
+        agent_id="observer",
+        tool_id="sensor",
     )
     output = tmp_path / "ops.html"
     assert run(["--db", str(db), "--output", str(output)]) == 0
