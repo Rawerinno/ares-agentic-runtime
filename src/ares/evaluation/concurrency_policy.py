@@ -46,6 +46,8 @@ def _mode_valid(raw: object) -> bool:
 
 
 def _read_sample(raw: Mapping[str, object], candidate: int) -> tuple[float, int] | None:
+    if raw.get("model_scope") != "raw_model_only":
+        return None
     parallelism = raw.get("parallelism")
     sequential = raw.get("sequential")
     concurrent = raw.get("parallel")
@@ -99,6 +101,11 @@ def choose_concurrency(
     )
     if not reports:
         return baseline
+    signatures = [json.dumps(report, sort_keys=True) for report in reports]
+    if len(set(signatures)) != len(signatures):
+        return SchedulingDecision(
+            1, False, "duplicate_trial", 0, min_trials, None, None
+        )
     parsed = [_read_sample(report, candidate) for report in reports]
     valid = [item for item in parsed if item is not None]
     if len(valid) != len(reports):
