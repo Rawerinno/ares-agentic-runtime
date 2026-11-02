@@ -14,20 +14,19 @@ from ares.supervisor import Supervisor
 
 
 @pytest.mark.parametrize("invalid", [nan, inf, -inf])
-def test_nonfinite_sensor_is_persisted_as_critical(
-    tmp_path: Path, invalid: float
-) -> None:
-    gateway = ReadOnlyToolGateway(
-        Policy(frozenset({("observer", "sensor", Capability.READ)}))
-    )
+def test_nonfinite_sensor_is_persisted_as_critical(tmp_path: Path, invalid: float) -> None:
+    gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
     gateway.register_sensor(
         "sensor", DeviceSimulator("invalid-sensor", initial_temperature_c=invalid)
     )
     supervisor = Supervisor(gateway)
     store = SqliteTaskStore(tmp_path / "tasks.sqlite")
     report = run_incident(
-        supervisor, store, task_id="invalid-reading",
-        agent_id="observer", tool_id="sensor",
+        supervisor,
+        store,
+        task_id="invalid-reading",
+        agent_id="observer",
+        tool_id="sensor",
     )
     assert report.severity == "critical"
     assert report.outcome == "review_required"
