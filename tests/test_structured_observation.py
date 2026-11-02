@@ -59,9 +59,7 @@ def test_cli_default_never_connects_to_ollama(
     assert payload["metrics"]["mean_latency_ms"] is None
 
 
-def test_llm_path_remains_opt_in(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
-) -> None:
+def test_llm_path_remains_opt_in(monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]) -> None:
     prompts: list[str] = []
 
     def loader(_model: str) -> bounded_observation.Generate:
