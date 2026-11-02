@@ -94,3 +94,27 @@ concurrency.
 
 All real-model tests are deferred until a substantial release
 candidate is ready; offline GitHub CI continues meanwhile.
+
+## Optional third LLM role (experimental)
+
+The bounded team now supports an opt-in **independent arithmetic reviewer**.
+It requests a fresh mean calculation from the same local model using the
+original readings and a distinct prompt, without trusting the extractor or
+first arithmetic role. This is an independent model invocation, **not** a
+distinct model provider, process or permanently running autonomous worker.
+
+```powershell
+uv run python -m ares.evaluation.bounded_team 55 60 65 --independent-review --audit-file .ares-bounded-audit.jsonl
+```
+
+The third role operates strictly within the already measured arithmetic
+scope. If its answer differs from the trusted Python calculation, ARES
+rejects the result; it never lowers a risk category or issues device
+commands. The CLI reports its accuracy and includes the request in the
+latency and total model-call metrics.
+
+This extra call is disabled by default because it adds latency, and
+agreement by two local LLM invocations is not independent safety evidence.
+The Python reviewer remains the final authority in both configurations.
+A model-running local test of this optional mode is deferred until the
+next consolidated hardware test session.
