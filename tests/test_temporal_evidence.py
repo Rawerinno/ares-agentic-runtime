@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 from typing import cast
-from typing import cast
 
 import pytest
 from pytest import CaptureFixture
