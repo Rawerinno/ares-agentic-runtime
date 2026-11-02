@@ -1,5 +1,7 @@
 """Privacy-minimized audit records for bounded read-only agent collaboration."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from ares.evaluation.audit import AuditEntry, append_entry
