@@ -19,6 +19,7 @@ from typing import cast
 from ares.evaluation.audit_storage import extend_audit, read_audit
 from ares.evaluation.bounded_team_audit import record_bounded_execution
 from ares.evaluation.concurrency_policy import choose_concurrency, load_reports
+from ares.evaluation.independent_review import independent_mean_review
 from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
 
 
@@ -128,6 +129,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("readings", nargs=3, help="Three numeric Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--audit-file", type=Path, help="Optional local hash-chained JSONL audit")
+    parser.add_argument("--independent-review", action="store_true", help="Optional third LLM role, arithmetic-only")
     parser.add_argument("--candidate", type=int, default=2, choices=(2, 3))
     parser.add_argument(
         "--benchmark-report",
@@ -154,6 +156,19 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     started = monotonic()
     report = evaluate_team(readings, timed_generate, parallelism=decision.parallelism)
+    primary_verified = report.status == "verified"
+    review_answer: str | None = None
+    review_correct = 0
+    if args.independent_review and primary_verified and report.verified_mean is not None:
+        review_answer, approved = independent_mean_review(
+            readings, report.verified_mean, timed_generate
+        )
+        review_correct = int(approved)
+        if not approved:
+            report = BoundedTeamResult(
+                "rejected", report.extracted, report.model_mean,
+                report.verified_mean, None, ("independent_review_mismatch",)
+            )
     wall_time_ms = (monotonic() - started) * 1000
     extraction_attempts = len(report.extracted)
     extraction_successes = sum(
@@ -161,15 +176,18 @@ def run(argv: Sequence[str] | None = None) -> int:
         for proposed, source in zip(report.extracted, readings, strict=True)
     )
     arithmetic_attempts = int(report.model_mean is not None)
-    arithmetic_successes = int(report.status == "verified")
-    attempted = extraction_attempts + arithmetic_attempts
-    passed = extraction_successes + arithmetic_successes
+    arithmetic_successes = int(primary_verified)
+    review_attempts = int(review_answer is not None)
+    attempted = extraction_attempts + arithmetic_attempts + review_attempts
+    passed = extraction_successes + arithmetic_successes + review_correct
     statistics = {
         "model_calls": len(latencies_ms),
         "extraction_correct": extraction_successes,
         "extraction_total": extraction_attempts,
         "arithmetic_correct": arithmetic_successes,
         "arithmetic_total": arithmetic_attempts,
+        "independent_review_correct": review_correct,
+        "independent_review_total": review_attempts,
         "model_steps_correct": passed,
         "model_steps_total": attempted,
         "model_steps_accuracy": round(passed / attempted, 4) if attempted else 0.0,
@@ -205,6 +223,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "statistics": statistics,
                 "scheduling_decision": asdict(decision),
                 "audit_digest": audit_digest,
+                "independent_review_answer": review_answer,
             },
             indent=2,
         )
