@@ -54,7 +54,7 @@ def ollama_three_role_generator(
                 "Investigator decision order: first inspect trusted healthy and "
                 "temperature_c. sensor_fault ONLY if healthy is false or "
                 "temperature_c is null/non-finite. If healthy is true and the "
-            "temperature is finite, NEVER select sensor_fault: use stable for "
+                "temperature is finite, NEVER select sensor_fault: use stable for "
                 "normal severity and thermal_load for warning or critical severity. "
                 "Examples: {healthy:true,temperature_c:18,severity:normal} => stable; "
                 "{healthy:true,temperature_c:65,severity:warning} => thermal_load; "
