@@ -40,7 +40,7 @@ def _number(value: str) -> Decimal | None:
         parsed = Decimal(value.strip())
     except InvalidOperation:
         return None
-    return parsed if parsed.is_finite() and abs(parsed) <= Decimal("1000000") else None
+    return parsed if parsed.is_finite() and parsed.copy_abs() <= Decimal("1000000") else None
 
 
 def _severity(value: Decimal) -> str:
