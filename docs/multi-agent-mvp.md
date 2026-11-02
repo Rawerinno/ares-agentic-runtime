@@ -112,3 +112,45 @@ latencies, and a clear `offline_simulation_reference_model` scope.
 The test uses **no Ollama** and does not validate real-device
 performance. A local end-to-end session with the actual Llama model
 will be requested only once the remainder of the MVP is consolidated.
+
+## Three governed LLM roles — opt-in experimental mode
+
+The CLI can now coordinate **three separate LLM invocations** on the
+same local Ollama model. They are sequential (not three separate model
+processes), carry distinct prompts and strictly validated outputs:
+
+1. Investigator proposes a bounded hypothesis (`stable`,
+   `thermal_load`, or `sensor_fault`).
+2. Planner proposes a bounded **non-executable** action category
+   (`monitor`, `inspect`, or `human_review`).
+3. Critic checks consistency with trusted telemetry and earlier
+   validated agent handoffs. It cannot approve an actuator command.
+
+The Python supervisor alone owns temperature severity, the permitted
+response and the final safety review. Any model mismatch, malformed
+JSON, model exception, or disagreement fails closed and is recorded as
+a coded handoff; the incident remains persisted with its deterministic
+outcome. Role outputs never become tool invocations. Completed tasks
+replay without model calls, and task identity binds the team mode and
+model name.
+
+Run a **zero-model reference** demonstration:
+
+```powershell
+uv run python -m ares.runtime.demo --temperature 65 --task-id team-offline-01 --team offline
+```
+
+After CI approval, the local Ollama demonstration:
+
+```powershell
+uv run python -m ares.runtime.demo --temperature 65 --task-id team-llama-01 --team ollama --model llama3.2:3b
+```
+
+The second command uses the user's installed local Ollama server.
+The model can fail any of the three contracts and the report will
+show the rejection without affecting the deterministic safety outcome.
+
+This is **three functional LLM agents under a single governed process**,
+not distributed or continually autonomous workers. The capability,
+latency, and reliability of the actual three-agent Llama setup remain
+to be measured locally. It is not an authorized hardware controller.

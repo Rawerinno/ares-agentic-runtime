@@ -93,3 +93,21 @@ def test_model_failure_is_not_silently_accepted() -> None:
 
     with pytest.raises(RuntimeError, match="Offline"):
         ProposalEngine(BrokenModel()).propose(observation(Severity.NORMAL))
+
+
+@pytest.mark.parametrize(
+    ("severity", "kind"),
+    [
+        (Severity.NORMAL, "investigate"),
+        (Severity.NORMAL, "request_review"),
+        (Severity.WARNING, "observe"),
+        (Severity.WARNING, "request_review"),
+        (Severity.CRITICAL, "observe"),
+        (Severity.CRITICAL, "investigate"),
+    ],
+)
+def test_severity_specific_policy_rejects_extra_or_missing_escalation(
+    severity: Severity, kind: str
+) -> None:
+    with pytest.raises(DecisionError, match="deterministic policy"):
+        ProposalEngine(FakeModel(payload(kind, severity.value))).propose(observation(severity))

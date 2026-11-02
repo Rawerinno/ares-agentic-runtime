@@ -5,6 +5,8 @@ It is a deterministic MVP, NOT four autonomous LLM workers. No actuator
 capabilities, network transports or unauthenticated human approvals exist.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import sqlite3
@@ -13,11 +15,14 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from math import isfinite
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from ares.intelligence.decisions import ModelAdapter
 from ares.intelligence.resilience import BoundedProposalEngine, OutcomeStatus
 from ares.supervisor import Assessment, Severity, Supervisor
+
+if TYPE_CHECKING:
+    from ares.runtime.governed_three_agents import GovernedThreeAgentTeam
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,8 +48,13 @@ class TaskConflictError(ValueError):
     """Existing task has a different request or is actively running."""
 
 
-def _request_hash(agent_id: str, tool_id: str, advisor_enabled: bool) -> str:
-    payload = json.dumps([agent_id, tool_id, advisor_enabled], separators=(",", ":"))
+def _request_hash(
+    agent_id: str, tool_id: str, advisor_enabled: bool, team_identity: str | None = None
+) -> str:
+    fields: list[object] = [agent_id, tool_id, advisor_enabled]
+    if team_identity is not None:
+        fields.append(team_identity)
+    payload = json.dumps(fields, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -222,10 +232,15 @@ def run_incident(
     tool_id: str,
     recover: bool = False,
     advisor: ModelAdapter | None = None,
+    team: GovernedThreeAgentTeam | None = None,
 ) -> IncidentReport:
     """Run bounded roles, persist result, or mark failure for explicit retry."""
+    if advisor is not None and team is not None:
+        raise ValueError("single advisor and three-agent team are mutually exclusive")
     previous = store.claim(
-        task_id, _request_hash(agent_id, tool_id, advisor is not None), recover=recover
+        task_id,
+        _request_hash(agent_id, tool_id, advisor is not None, team.identity if team else None),
+        recover=recover,
     )
     if previous is not None:
         return previous
@@ -255,7 +270,10 @@ def run_incident(
                         "Follow deterministic assessment; no model actuation",
                     ),
                 )
-        final = (*handoffs, *advice, _review(assessment, handoffs[-1]))
+        team_handoffs: tuple[RoleHandoff, ...] = ()
+        if team is not None:
+            team_handoffs = team.evaluate(assessment).handoffs
+        final = (*handoffs, *advice, *team_handoffs, _review(assessment, handoffs[-1]))
         report = IncidentReport(
             task_id=task_id,
             device_id=assessment.snapshot.device_id,
