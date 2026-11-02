@@ -9,6 +9,7 @@ from ares.evaluation.concurrency_policy import choose_concurrency
 
 def sample(candidate: int = 2, speedup: float = 1.3) -> Mapping[str, object]:
     return {
+        "model_scope": "raw_model_only",
         "parallelism": candidate,
         "sequential": {
             "total": 18,
@@ -112,4 +113,18 @@ def test_boolean_is_not_a_valid_count() -> None:
         "wall_time_ms": 10000.0,
     }
     decision = choose_concurrency([invalid, sample(), sample()], candidate=2)
+    assert decision.reason == "invalid_or_incorrect_trial"
+
+
+def test_duplicate_reports_do_not_count_as_independent_trials() -> None:
+    repeated = sample(speedup=1.4)
+    decision = choose_concurrency([repeated, repeated, repeated], candidate=2)
+    assert decision.parallelism == 1
+    assert decision.reason == "duplicate_trial"
+
+
+def test_governed_accuracy_cannot_authorize_parallelism() -> None:
+    result = dict(sample())
+    result["model_scope"] = "governed"
+    decision = choose_concurrency([result, sample(speedup=1.2)], candidate=2)
     assert decision.reason == "invalid_or_incorrect_trial"
