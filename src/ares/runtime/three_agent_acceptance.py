@@ -13,6 +13,7 @@ from pathlib import Path
 from statistics import mean, median
 from tempfile import TemporaryDirectory
 from time import monotonic
+from typing import cast
 
 from ares.evaluation.ollama_capability_boundary import Generate
 from ares.integrations import ReadOnlyToolGateway
@@ -68,7 +69,7 @@ def _bounded_role_value(role: str, answer: str) -> str:
     if not isinstance(value, dict):
         return "unrecognized"
     field, allowed = allowlists[role]
-    actual = value.get(field)
+    actual = cast("dict[str, object]", value).get(field)
     return actual if isinstance(actual, str) and actual in allowed else "unrecognized"
 
 
@@ -139,9 +140,9 @@ def _investigator_confusion(
         else:
             proposals = row.get("bounded_proposals")
             if isinstance(proposals, list):
-                for item in proposals:
-                    if isinstance(item, dict) and item.get("role") == "investigator":
-                        candidate = item.get("proposed")
+                for item in cast("list[object]", proposals):
+                    if isinstance(item, dict) and cast("dict[str, object]", item).get("role") == "investigator":
+                        candidate = cast("dict[str, object]", item).get("proposed")
                         if isinstance(candidate, str):
                             proposed = candidate
                         break
