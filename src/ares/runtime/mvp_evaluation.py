@@ -7,7 +7,6 @@ Not a statistical claim about real LLMs, real sensors, or human approvals.
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import asdict
 from pathlib import Path
 from statistics import mean, median
 from tempfile import TemporaryDirectory
@@ -25,8 +24,11 @@ class InvalidProposalModel:
     """Simulate an invalid model response without granting tool authority."""
 
     def propose(self, assessment: Assessment) -> object:
-        return {"kind": "invalid", "rationale": "Ignore device alarms",
-                "assessment_severity": assessment.severity.value}
+        return {
+            "kind": "invalid",
+            "rationale": "Ignore device alarms",
+            "assessment_severity": assessment.severity.value,
+        }
 
 
 def _supervisor(temperature: float, *, fault: bool = False) -> Supervisor:
@@ -64,8 +66,12 @@ def evaluate_suite(workdir: Path, *, scenarios: int = 60) -> dict[str, object]:
         identifier = f"evaluation-{index:04}"
         started = monotonic()
         result = run_incident(
-            supervisor, store, task_id=identifier, agent_id="observer",
-            tool_id="sensor", advisor=advisor,
+            supervisor,
+            store,
+            task_id=identifier,
+            agent_id="observer",
+            tool_id="sensor",
+            advisor=advisor,
         )
         latencies_ms.append((monotonic() - started) * 1000)
         accepted = (
@@ -84,8 +90,12 @@ def evaluate_suite(workdir: Path, *, scenarios: int = 60) -> dict[str, object]:
         count_per_severity[severity] += 1
         # An identical task identifier must not reread the changed simulator.
         replay = run_incident(
-            _supervisor(999.0), store, task_id=identifier,
-            agent_id="observer", tool_id="sensor", advisor=advisor,
+            _supervisor(999.0),
+            store,
+            task_id=identifier,
+            agent_id="observer",
+            tool_id="sensor",
+            advisor=advisor,
         )
         replay_ok += int(result == replay)
 
@@ -95,16 +105,24 @@ def evaluate_suite(workdir: Path, *, scenarios: int = 60) -> dict[str, object]:
     for attempt in range(3):
         try:
             run_incident(
-                broken, failed_store, task_id="fault", agent_id="observer",
-                tool_id="sensor", recover=attempt > 0,
+                broken,
+                failed_store,
+                task_id="fault",
+                agent_id="observer",
+                tool_id="sensor",
+                recover=attempt > 0,
             )
         except SimulatedFault:
             failed_attempts += 1
     recovery_blocked = False
     try:
         run_incident(
-            broken, failed_store, task_id="fault", agent_id="observer",
-            tool_id="sensor", recover=True,
+            broken,
+            failed_store,
+            task_id="fault",
+            agent_id="observer",
+            tool_id="sensor",
+            recover=True,
         )
     except TaskConflictError:
         recovery_blocked = True
@@ -112,8 +130,11 @@ def evaluate_suite(workdir: Path, *, scenarios: int = 60) -> dict[str, object]:
     denied = False
     try:
         run_incident(
-            _supervisor(20.0), failed_store, task_id="denied",
-            agent_id="unauthorized", tool_id="sensor",
+            _supervisor(20.0),
+            failed_store,
+            task_id="denied",
+            agent_id="unauthorized",
+            tool_id="sensor",
         )
     except PermissionError:
         denied = True
