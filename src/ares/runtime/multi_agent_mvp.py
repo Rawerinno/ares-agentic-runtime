@@ -163,8 +163,7 @@ class SqliteTaskStore:
             raise ValueError("limit must be between 1 and 1000")
         with self._connection() as db:
             rows = db.execute(
-                "SELECT report_json FROM tasks WHERE status = 'completed' "
-                "ORDER BY task_id LIMIT ?",
+                "SELECT report_json FROM tasks WHERE status = 'completed' ORDER BY task_id LIMIT ?",
                 (limit,),
             ).fetchall()
         return tuple(self._decode(str(payload)) for (payload,) in rows)
