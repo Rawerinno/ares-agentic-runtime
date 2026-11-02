@@ -86,9 +86,9 @@ def evaluate_team(
     else:
         with ThreadPoolExecutor(max_workers=parallelism) as pool:
             extracted = list(pool.map(extract, readings))
-    if any(_number(proposed) != target for proposed, target in zip(
-        extracted, expected, strict=True
-    )):
+    if any(
+        _number(proposed) != target for proposed, target in zip(extracted, expected, strict=True)
+    ):
         return BoundedTeamResult(
             "rejected", tuple(extracted), None, None, None, ("extractor_mismatch",)
         )
@@ -127,13 +127,14 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--candidate", type=int, default=2, choices=(2, 3))
     parser.add_argument(
-        "--benchmark-report", type=Path, action="append", default=[],
+        "--benchmark-report",
+        type=Path,
+        action="append",
+        default=[],
         help="Independent raw-model performance reports (3 required to enable concurrency)",
     )
     args = parser.parse_args(argv)
-    decision = choose_concurrency(
-        load_reports(args.benchmark_report), candidate=args.candidate
-    )
+    decision = choose_concurrency(load_reports(args.benchmark_report), candidate=args.candidate)
     readings = tuple(f"{value} C" for value in cast("list[str]", args.readings))
     generate = ollama_generator(args.model)
     latencies_ms: list[float] = []
