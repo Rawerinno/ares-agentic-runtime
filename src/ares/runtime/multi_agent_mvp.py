@@ -12,6 +12,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from math import isfinite
 from typing import cast
 
 from ares.intelligence.decisions import ModelAdapter
@@ -31,7 +32,7 @@ class IncidentReport:
     task_id: str
     device_id: str
     observed_step: int
-    temperature_c: float
+    temperature_c: float | None
     severity: str
     outcome: str
     handoffs: tuple[RoleHandoff, ...]
@@ -96,7 +97,7 @@ class SqliteTaskStore:
             task_id=cast("str", fields["task_id"]),
             device_id=cast("str", fields["device_id"]),
             observed_step=cast("int", fields["observed_step"]),
-            temperature_c=cast("float", fields["temperature_c"]),
+            temperature_c=cast("float | None", fields["temperature_c"]),
             severity=cast("str", fields["severity"]),
             outcome=cast("str", fields["outcome"]),
             handoffs=tuple(handoffs),
@@ -259,7 +260,11 @@ def run_incident(
             task_id=task_id,
             device_id=assessment.snapshot.device_id,
             observed_step=assessment.snapshot.step,
-            temperature_c=assessment.snapshot.temperature_c,
+            temperature_c=(
+                assessment.snapshot.temperature_c
+                if isfinite(assessment.snapshot.temperature_c)
+                else None
+            ),
             severity=assessment.severity.value,
             outcome="review_required"
             if assessment.severity is Severity.CRITICAL
