@@ -95,7 +95,9 @@ def test_malformed_input_never_calls_model(readings: tuple[str, ...]) -> None:
 def test_cli_reports_advisory_failure_and_correct_authority(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(bounded_observation, "ollama_generator", lambda _model: extract_or_wrong_mean)
+    monkeypatch.setattr(
+        bounded_observation, "ollama_generator", lambda _model: extract_or_wrong_mean
+    )
     assert bounded_observation.run(["61.5", "62.5", "63.5", "--evaluate-arithmetic"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "verified"
