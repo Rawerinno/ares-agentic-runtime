@@ -35,14 +35,16 @@ def test_role_only_all_three_with_reference_and_no_severity_output() -> None:
     assert result.status == "accepted"
     assert result.calls == 3
     assert [set(cast("dict[str, str]", json.loads(value))) for value in observed] == [
-        {"hypothesis"}, {"plan"}, {"verdict"}
+        {"hypothesis"},
+        {"plan"},
+        {"verdict"},
     ]
 
 
 def test_role_only_still_rejects_wrong_proposal() -> None:
-    result = GovernedThreeAgentTeam(
-        lambda _: '{"hypothesis":"stable"}', role_only=True
-    ).evaluate(scenario())
+    result = GovernedThreeAgentTeam(lambda _: '{"hypothesis":"stable"}', role_only=True).evaluate(
+        scenario()
+    )
     assert result.status == "rejected"
     assert result.error_code == "policy_mismatch"
     assert result.handoffs[-1].finding.endswith("hypothesis_mismatch")
@@ -72,15 +74,11 @@ def test_role_only_ollama_schema_requires_one_field(monkeypatch: MonkeyPatch) ->
 
     transport = RecordingTransport()
     monkeypatch.setattr(three_agent_ollama, "OllamaLocalTransport", lambda: transport)
-    generate = three_agent_ollama.ollama_three_role_generator(
-        "llama3.2:3b", role_only=True
-    )
+    generate = three_agent_ollama.ollama_three_role_generator("llama3.2:3b", role_only=True)
     assert json.loads(generate("ROLE=investigator. Trusted context: {}.")) == {
         "hypothesis": "thermal_load"
     }
-    assert "severity" not in cast("dict[str, object]", transport.calls[0]["format"])[
-        "required"
-    ]
+    assert "severity" not in cast("dict[str, object]", transport.calls[0]["format"])["required"]
 
 
 def test_isolated_probes_reach_downstream_roles_after_investigator_failure(
