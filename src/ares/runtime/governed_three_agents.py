@@ -89,11 +89,10 @@ class GovernedThreeAgentTeam:
                 "Severity is fixed by Python. Allowed investigator hypotheses: "
                 "stable, thermal_load, sensor_fault. Allowed planner plans: "
                 "monitor, inspect, human_review. Allowed critic verdicts: "
-                "consistent, inconsistent. Use only the two keys applicable "
-                "to your role plus the severity field, with no extra keys. "
+                "consistent, inconsistent. Use exactly your role-specific key "
+                "and the severity key, with no extra keys. "
                 "Your answer must be a JSON object string, not prose. "
                 f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
-            )
             )
             calls += 1
             try:
