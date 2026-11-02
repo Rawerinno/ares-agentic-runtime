@@ -144,7 +144,9 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("readings", nargs=3, help="Three simple Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument(
-        "--input-mode", choices=("structured", "llm"), default="structured",
+        "--input-mode",
+        choices=("structured", "llm"),
+        default="structured",
         help="Structured fields use a deterministic zero-model path (default)",
     )
     parser.add_argument(
@@ -175,9 +177,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     payload = {
         **asdict(report),
         "authority": "deterministic_python",
-        "model_authority": (
-            "verified_extraction_only" if args.input_mode == "llm" else "none"
-        ),
+        "model_authority": ("verified_extraction_only" if args.input_mode == "llm" else "none"),
         "input_mode": args.input_mode,
         "device_actions": "disabled",
         "metrics": {
