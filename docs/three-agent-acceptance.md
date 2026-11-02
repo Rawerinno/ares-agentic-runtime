@@ -135,3 +135,7 @@ plus three isolated model calls. With nine scenarios and two repeats,
 the maximum is 108 local model calls (often fewer if the sequential
 team rejects early). Choose `--repeats 1` for a smaller initial
 sample. This is not a benchmark of general model intelligence.
+
+## Hypothesis confusion audit
+
+The benchmark includes bounded per-role proposed categories and an investigator confusion table derived from trusted scenario readings. Raw model-generated text is not stored in these fields. The synthetic `thermal_load` label is an evaluation category, not a proven physical cause from one temperature sample. No model proposal can change supervisor severity or actuate devices.
