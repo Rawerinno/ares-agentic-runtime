@@ -11,8 +11,8 @@ import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from math import isfinite
+from pathlib import Path
 from typing import cast
 
 from ares.intelligence.decisions import ModelAdapter
