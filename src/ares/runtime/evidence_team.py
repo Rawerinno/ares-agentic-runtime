@@ -83,10 +83,7 @@ def _prompt(role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, .
         "delta_c": triage.evidence.delta_c,
         "risk_severity": triage.severity.value,
         "risk_reason": triage.risk_reason,
-        "prior_proposals": [
-            {"role": item.role, "proposed": item.proposed}
-            for item in previous
-        ],
+        "prior_proposals": [{"role": item.role, "proposed": item.proposed} for item in previous],
     }
     instructions = {
         "investigator": (
