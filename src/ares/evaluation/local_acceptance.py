@@ -59,9 +59,7 @@ def _grade(raw: str, expected: str) -> bool:
     return actual_number.is_finite() and actual_number == expected_number
 
 
-def _measure(
-    generate: Generate, calls: list[tuple[str, str, float, bool]]
-) -> Generate:
+def _measure(generate: Generate, calls: list[tuple[str, str, float, bool]]) -> Generate:
     """Build a per-scenario measurement wrapper without sharing captured state."""
 
     def measured(prompt: str) -> str:
