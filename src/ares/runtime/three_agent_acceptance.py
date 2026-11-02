@@ -47,7 +47,7 @@ class RoleStat:
     attempted: int = 0
     accepted: int = 0
     errors: int = 0
-    latencies_ms: list[float] = field(default_factory=list)
+    latencies_ms: list[float] = field(default_factory=lambda: list[float]())
 
 
 def _meter(generate: Generate, counts: dict[str, RoleStat], case_calls: list[str]) -> Generate:
