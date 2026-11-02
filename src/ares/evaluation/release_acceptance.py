@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from decimal import Decimal
 from pathlib import Path
 
-from ares.evaluation.audit import verify_entries
+from ares.evaluation.audit import AuditEntry, verify_entries
 from ares.evaluation.bounded_team import evaluate_team
 from ares.evaluation.bounded_team_audit import record_bounded_execution
 from ares.evaluation.concurrency_policy import choose_concurrency
@@ -38,9 +38,9 @@ def _severity(value: Decimal) -> str:
 def acceptance_report() -> dict[str, object]:
     """Run 121 representative boundary cases and distinct failure injections."""
     checks: dict[str, bool] = {}
-    model_calls = 0
-    completed = 0
-    audited = ()
+    model_calls: int = 0
+    completed: int = 0
+    audited: tuple[AuditEntry, ...] = ()
     policy = choose_concurrency([], candidate=2)
     checks["default_sequential"] = policy.parallelism == 1 and not policy.authorized
 
