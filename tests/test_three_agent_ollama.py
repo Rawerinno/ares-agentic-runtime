@@ -106,3 +106,36 @@ def test_bad_transport_response_is_model_error(monkeypatch: MonkeyPatch) -> None
     ).evaluate(assessment())
     assert outcome.status == "rejected"
     assert outcome.error_code == "model_exception"
+
+
+def test_investigator_prompt_disambiguates_healthy_telemetry(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Prompt tuning is advisory and must not change the governor's authority."""
+    fake = FakeTransport()
+    monkeypatch.setattr(three_agent_ollama, "OllamaLocalTransport", lambda: fake)
+    generator = three_agent_ollama.ollama_three_role_generator("llama3.2:3b")
+    outcome = GovernedThreeAgentTeam(generator).evaluate(assessment())
+    assert outcome.status == "accepted"
+    investigator_prompt = cast("str", fake.requests[0]["prompt"])
+    planner_prompt = cast("str", fake.requests[1]["prompt"])
+    critic_prompt = cast("str", fake.requests[2]["prompt"])
+    assert "sensor_fault ONLY if healthy is false" in investigator_prompt
+    assert "NEVER select sensor_fault" in investigator_prompt
+    assert "temperature_c:65,severity:warning" in investigator_prompt
+    assert "NEVER select sensor_fault" not in planner_prompt
+    assert "NEVER select sensor_fault" not in critic_prompt
+    assert all(request["stream"] is False for request in fake.requests)
+
+
+def test_prompt_guidance_cannot_authorize_wrong_investigator(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    fake = FakeTransport()
+    fake.override = {"hypothesis": "sensor_fault", "severity": "warning"}
+    monkeypatch.setattr(three_agent_ollama, "OllamaLocalTransport", lambda: fake)
+    generator = three_agent_ollama.ollama_three_role_generator("llama3.2:3b")
+    outcome = GovernedThreeAgentTeam(generator).evaluate(assessment())
+    assert outcome.status == "rejected"
+    assert outcome.calls == 1
+    assert outcome.error_code == "policy_mismatch"
