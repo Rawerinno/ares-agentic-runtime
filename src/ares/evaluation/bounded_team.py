@@ -40,7 +40,7 @@ def _number(value: str) -> Decimal | None:
         parsed = Decimal(value.strip())
     except InvalidOperation:
         return None
-    return parsed if parsed.is_finite() else None
+    return parsed if parsed.is_finite() and abs(parsed) <= Decimal("1000000") else None
 
 
 def _severity(value: Decimal) -> str:
@@ -73,7 +73,7 @@ def evaluate_team(
             raise ValueError("readings must contain a single unambiguous number")
         value = _number(tokens[0])
         if value is None:
-            raise ValueError("reading must be a finite numeric value")
+            raise ValueError("reading must be a finite bounded numeric value")
         expected.append(value)
 
     def extract(source: str) -> str:
