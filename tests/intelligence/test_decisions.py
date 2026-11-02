@@ -110,6 +110,4 @@ def test_severity_specific_policy_rejects_extra_or_missing_escalation(
     severity: Severity, kind: str
 ) -> None:
     with pytest.raises(DecisionError, match="deterministic policy"):
-        ProposalEngine(FakeModel(payload(kind, severity.value))).propose(
-            observation(severity)
-        )
+        ProposalEngine(FakeModel(payload(kind, severity.value))).propose(observation(severity))
