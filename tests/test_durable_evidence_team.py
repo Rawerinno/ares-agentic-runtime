@@ -199,3 +199,62 @@ def test_malformed_role_fields_refused_even_with_matching_checksum(tmp_path: Pat
         )
     with pytest.raises(ValueError, match="authority"):
         store.completed()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("severity", "supercritical"),
+        ("authorized_action", "power_off"),
+        ("authorized_action", "monitor"),
+        ("team_accepted", False),
+        ("evidence_state", "invented_state"),
+        ("device_actions", "enabled"),
+    ],
+)
+def test_recomputed_checksum_does_not_bypass_policy_schema(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    import hashlib
+
+    store = DurableEvidenceStore(tmp_path / "audit.sqlite")
+    run_durable_evidence_team(
+        store, evidence_team_reference_generate, trace(85), task_id="case",
+        identity="model-1",
+    )
+    with sqlite3.connect(store.path) as db:
+        result = json.loads(
+            db.execute("SELECT result FROM evidence_tasks WHERE task_id = 'case'").fetchone()[0]
+        )
+        result[field] = value
+        encoded = json.dumps(result, sort_keys=True)
+        digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        db.execute(
+            "UPDATE evidence_tasks SET result = ?, digest = ? WHERE task_id = 'case'",
+            (encoded, digest),
+        )
+    with pytest.raises(ValueError):
+        store.completed()
+
+
+def test_recomputed_checksum_cannot_forge_role_acceptance(tmp_path: Path) -> None:
+    import hashlib
+
+    store = DurableEvidenceStore(tmp_path / "audit.sqlite")
+    run_durable_evidence_team(
+        store, evidence_team_reference_generate, trace(85), task_id="case",
+        identity="model-1",
+    )
+    with sqlite3.connect(store.path) as db:
+        result = json.loads(
+            db.execute("SELECT result FROM evidence_tasks WHERE task_id = 'case'").fetchone()[0]
+        )
+        result["roles"][0]["accepted"] = False
+        encoded = json.dumps(result, sort_keys=True)
+        digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        db.execute(
+            "UPDATE evidence_tasks SET result = ?, digest = ? WHERE task_id = 'case'",
+            (encoded, digest),
+        )
+    with pytest.raises(ValueError, match="inconsistent"):
+        store.completed()
