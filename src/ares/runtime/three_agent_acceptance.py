@@ -7,7 +7,7 @@ Safety is measured separately from raw model-role acceptance.
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean, median
 from tempfile import TemporaryDirectory
@@ -42,6 +42,35 @@ SCENARIOS = (
 )
 
 
+
+@dataclass(slots=True)
+class RoleStat:
+    attempted: int = 0
+    accepted: int = 0
+    errors: int = 0
+    latencies_ms: list[float] = field(default_factory=list)
+
+
+def _meter(
+    generate: Generate, counts: dict[str, RoleStat], case_calls: list[str]
+) -> Generate:
+    def measured(question: str) -> str:
+        role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+        begin = monotonic()
+        case_calls.append(role)
+        stat = counts[role]
+        stat.attempted += 1
+        try:
+            return generate(question)
+        except Exception:
+            stat.errors += 1
+            raise
+        finally:
+            stat.latencies_ms.append(round((monotonic() - begin) * 1000, 2))
+
+    return measured
+
+
 def evaluate_three_roles(
     generate: Generate,
     workdir: Path,
@@ -57,10 +86,7 @@ def evaluate_three_roles(
         raise ValueError("scenario names must be distinct")
     store = SqliteTaskStore(workdir / "team-acceptance.sqlite3")
     role_names = ("investigator", "planner", "critic")
-    counts: dict[str, dict[str, object]] = {
-        role: {"attempted": 0, "accepted": 0, "errors": 0, "latencies_ms": []}
-        for role in role_names
-    }
+    counts = {role: RoleStat() for role in role_names}
     details: list[dict[str, object]] = []
     governed_correct = 0
     full_team_pass = 0
@@ -70,21 +96,7 @@ def evaluate_three_roles(
         for repetition in range(repeats):
             case_calls: list[str] = []
 
-            def measured(question: str) -> str:
-                role = question.split("ROLE=", 1)[1].split(".", 1)[0]
-                begin = monotonic()
-                case_calls.append(role)
-                item = counts[role]
-                item["attempted"] = int(item["attempted"]) + 1
-                try:
-                    return generate(question)
-                except Exception:
-                    item["errors"] = int(item["errors"]) + 1
-                    raise
-                finally:
-                    delays = item["latencies_ms"]
-                    if isinstance(delays, list):
-                        delays.append(round((monotonic() - begin) * 1000, 2))
+            measured = _meter(generate, counts, case_calls)
 
             gateway = ReadOnlyToolGateway(
                 Policy(frozenset({("observer", "sensor", Capability.READ)}))
@@ -115,8 +127,7 @@ def evaluate_three_roles(
             ]
             for handoff in role_handoffs:
                 if handoff.finding.startswith("Validated:"):
-                    item = counts[handoff.role]
-                    item["accepted"] = int(item["accepted"]) + 1
+                    counts[handoff.role].accepted += 1
             team_pass = (
                 len(role_handoffs) == 3
                 and all(h.finding.startswith("Validated:") for h in role_handoffs)
@@ -140,18 +151,20 @@ def evaluate_three_roles(
                 ),
             })
     role_summary: dict[str, dict[str, object]] = {}
-    for role, raw in counts.items():
-        attempted = int(raw["attempted"])
-        accepted = int(raw["accepted"])
-        delays = raw["latencies_ms"]
-        measurements = delays if isinstance(delays, list) else []
+    for role, stat in counts.items():
         role_summary[role] = {
-            "attempted": attempted,
-            "accepted": accepted,
-            "accuracy_on_attempts": round(accepted / attempted, 4) if attempted else None,
-            "errors": raw["errors"],
-            "mean_latency_ms": round(mean(measurements), 2) if measurements else None,
-            "median_latency_ms": round(median(measurements), 2) if measurements else None,
+            "attempted": stat.attempted,
+            "accepted": stat.accepted,
+            "accuracy_on_attempts": (
+                round(stat.accepted / stat.attempted, 4) if stat.attempted else None
+            ),
+            "errors": stat.errors,
+            "mean_latency_ms": (
+                round(mean(stat.latencies_ms), 2) if stat.latencies_ms else None
+            ),
+            "median_latency_ms": (
+                round(median(stat.latencies_ms), 2) if stat.latencies_ms else None
+            ),
         }
     count = len(details)
     return {
