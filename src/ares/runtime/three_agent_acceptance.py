@@ -126,7 +126,8 @@ def evaluate_three_roles(
                 )
             )
             governed_correct += int(safe)
-            role_handoffs = [h for h in outcome.handoffs if h.role in role_names]
+            # Exclude the deterministic planner (same name as the LLM planner).
+            role_handoffs = [h for h in outcome.handoffs[3:-1] if h.role in role_names]
             for handoff in role_handoffs:
                 if handoff.finding.startswith("Validated:"):
                     counts[handoff.role].accepted += 1
