@@ -76,8 +76,7 @@ def analyze_evidence(
         highest = max(reading.temperature_c for reading in valid)
         # A single anomalous point should not establish a persistent rise.
         monotone = all(
-            later.temperature_c >= earlier.temperature_c
-            for earlier, later in pairwise(valid)
+            later.temperature_c >= earlier.temperature_c for earlier, later in pairwise(valid)
         )
         state = (
             EvidenceState.RISING_TEMPERATURE
