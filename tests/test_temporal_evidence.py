@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 from pytest import CaptureFixture
@@ -135,8 +136,8 @@ def test_confusion_redacts_untrusted_output() -> None:
     results = report["results"]
     assert isinstance(results, list)
     assert all(
-        isinstance(row, dict) and row.get("bounded_proposal") == "validate_sensor"
-        for row in results
+        row.get("bounded_proposal") == "validate_sensor"
+        for row in cast("list[dict[str, object]]", results)
     )
     assert secret not in json.dumps(report)
     assert bounded_followup("not json " + secret) == "unrecognized"
