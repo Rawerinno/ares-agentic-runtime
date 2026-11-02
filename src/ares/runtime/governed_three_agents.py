@@ -35,7 +35,7 @@ def _mismatch_reason(actual: object, expected: dict[str, str]) -> str:
         return "invalid_fields"
     if any(type(value) is not str for value in fields.values()):
         return "invalid_types"
-    if fields["severity"] != expected["severity"]:
+    if "severity" in expected and fields["severity"] != expected["severity"]:
         return "severity_mismatch"
     role_field = next(field for field in expected if field != "severity")
     if fields[role_field] != expected[role_field]:
@@ -46,11 +46,14 @@ def _mismatch_reason(actual: object, expected: dict[str, str]) -> str:
 class GovernedThreeAgentTeam:
     """Investigator, planner, critic; each provides bounded advisory enums."""
 
-    def __init__(self, generate: Generate, *, identity: str = "three-role-v1") -> None:
+    def __init__(
+        self, generate: Generate, *, identity: str = "three-role-v1", role_only: bool = False
+    ) -> None:
         if not identity.strip() or len(identity) > 120:
             raise ValueError("team identity must be 1..120 nonblank characters")
         self._generate = generate
         self.identity = identity
+        self.role_only = role_only
 
     def evaluate(self, assessment: Assessment) -> TeamOutcome:
         from ares.runtime.multi_agent_mvp import RoleHandoff
@@ -108,7 +111,12 @@ class GovernedThreeAgentTeam:
         }
         handoffs: list[RoleHandoff] = []
         calls = 0
-        for role, expected, instruction in descriptions:
+        for role, expected_full, instruction in descriptions:
+            expected = (
+                {key: value for key, value in expected_full.items() if key != "severity"}
+                if self.role_only
+                else expected_full
+            )
             trusted = {
                 "severity": severity,
                 "temperature_c": (
@@ -124,8 +132,9 @@ class GovernedThreeAgentTeam:
             question = (
                 f"ROLE={role}. {instruction}. {rules[role]} "
                 "You have NO tool permissions and must not change severity. "
-                "Respond with exactly one JSON object containing the two "
-                "role-specific string fields, not Markdown or prose. "
+                "Respond with exactly one JSON object containing "
+                + ("ONLY the role-specific field, no severity field. " if self.role_only else "the role-specific field AND severity. ")
+                + "No Markdown or prose. "
                 f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
             )
             calls += 1
@@ -175,6 +184,7 @@ def reference_generate(question: str) -> str:
     severity = context.get("severity")
     if severity not in ("normal", "warning", "critical"):
         raise ValueError("invalid reference severity")
+    role_only = "ONLY the role-specific field, no severity field." in question
     if role == "investigator":
         hypothesis = (
             "sensor_fault"
@@ -183,14 +193,23 @@ def reference_generate(question: str) -> str:
             if severity == "normal"
             else "thermal_load"
         )
-        return json.dumps({"hypothesis": hypothesis, "severity": severity})
+        result = {"hypothesis": hypothesis}
+        if not role_only:
+            result["severity"] = severity
+        return json.dumps(result)
     if role == "planner":
         plan = {
             "normal": "monitor",
             "warning": "inspect",
             "critical": "human_review",
         }[cast("str", severity)]
-        return json.dumps({"plan": plan, "severity": severity})
+        result = {"plan": plan}
+        if not role_only:
+            result["severity"] = severity
+        return json.dumps(result)
     if role == "critic":
-        return json.dumps({"verdict": "consistent", "severity": severity})
+        result = {"verdict": "consistent"}
+        if not role_only:
+            result["severity"] = severity
+        return json.dumps(result)
     raise ValueError("unknown reference role")
