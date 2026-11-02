@@ -9,17 +9,13 @@ from ares.evaluation.independent_review import independent_mean_review
 
 
 def test_independent_mean_review_accepts_equivalent_numeric_answer() -> None:
-    answer, passed = independent_mean_review(
-        ("55 C", "60 C", "65 C"), "60", lambda _: "60.0"
-    )
+    answer, passed = independent_mean_review(("55 C", "60 C", "65 C"), "60", lambda _: "60.0")
     assert answer == "60.0"
     assert passed
 
 
 def test_independent_mean_review_rejects_wrong_result() -> None:
-    answer, passed = independent_mean_review(
-        ("55 C", "60 C", "65 C"), "60", lambda _: "61"
-    )
+    answer, passed = independent_mean_review(("55 C", "60 C", "65 C"), "60", lambda _: "61")
     assert answer == "61"
     assert not passed
 
