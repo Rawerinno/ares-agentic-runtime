@@ -54,12 +54,18 @@ def test_task_identity_binds_readings_and_model_identity(tmp_path: Path) -> None
     )
     with pytest.raises(EvidenceTaskConflict):
         run_durable_evidence_team(
-            store, evidence_team_reference_generate, trace(65), task_id="case",
+            store,
+            evidence_team_reference_generate,
+            trace(65),
+            task_id="case",
             identity="model-1",
         )
     with pytest.raises(EvidenceTaskConflict):
         run_durable_evidence_team(
-            store, evidence_team_reference_generate, trace(60), task_id="case",
+            store,
+            evidence_team_reference_generate,
+            trace(60),
+            task_id="case",
             identity="model-2",
         )
 
@@ -71,16 +77,20 @@ def test_failed_task_requires_explicit_recovery(tmp_path: Path) -> None:
         # Untrusted model errors are handled by the team; not a workflow failure.
         raise RuntimeError("provider token")
 
-    result = run_durable_evidence_team(
-        store, bad, trace(85), task_id="case", identity="model-1"
-    )
+    result = run_durable_evidence_team(store, bad, trace(85), task_id="case", identity="model-1")
     assert not result.team_accepted
     assert all(role.diagnostic == "model_exception" for role in result.roles)
     assert "provider token" not in json.dumps(store.completed(), default=str)
-    assert run_durable_evidence_team(
-        store, evidence_team_reference_generate, trace(85), task_id="case",
-        identity="model-1",
-    ) == result
+    assert (
+        run_durable_evidence_team(
+            store,
+            evidence_team_reference_generate,
+            trace(85),
+            task_id="case",
+            identity="model-1",
+        )
+        == result
+    )
 
 
 def test_unfinished_claim_cannot_be_stolen_even_with_recover(tmp_path: Path) -> None:
@@ -103,7 +113,10 @@ def test_corrupt_report_is_detected_and_never_replayed(tmp_path: Path) -> None:
     location = tmp_path / "audit.sqlite"
     store = DurableEvidenceStore(location)
     run_durable_evidence_team(
-        store, evidence_team_reference_generate, trace(85), task_id="case",
+        store,
+        evidence_team_reference_generate,
+        trace(85),
+        task_id="case",
         identity="model-1",
     )
     with sqlite3.connect(location) as db:
@@ -149,7 +162,10 @@ def test_invalid_or_symlink_db_and_inputs_are_rejected(tmp_path: Path) -> None:
         )
     with pytest.raises(ValueError):
         run_durable_evidence_team(
-            store, evidence_team_reference_generate, trace(20), task_id="bad",
+            store,
+            evidence_team_reference_generate,
+            trace(20),
+            task_id="bad",
             identity="",
         )
     with pytest.raises(ValueError):
@@ -164,7 +180,10 @@ def test_malformed_role_fields_refused_even_with_matching_checksum(tmp_path: Pat
 
     store = DurableEvidenceStore(tmp_path / "audit.sqlite")
     run_durable_evidence_team(
-        store, evidence_team_reference_generate, trace(60), task_id="case",
+        store,
+        evidence_team_reference_generate,
+        trace(60),
+        task_id="case",
         identity="model-1",
     )
     with sqlite3.connect(store.path) as db:
