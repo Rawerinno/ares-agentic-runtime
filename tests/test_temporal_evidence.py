@@ -45,7 +45,9 @@ def test_evidence_never_infers_cause_from_single_reading(
     assert report.state is expected
     assert report.device_actions == "disabled"
     assert report.suggested_followup in (
-        "validate_sensor", "collect_more_samples", "inspect_thermal_system",
+        "validate_sensor",
+        "collect_more_samples",
+        "inspect_thermal_system",
         "continue_monitoring",
     )
 
@@ -75,14 +77,14 @@ def test_recommendation_parser_rejects_wrong_and_extra_fields() -> None:
     report = analyze_evidence([EvidenceReading(0, 85.0)])
     assert parse_followup(reference_followup(report), report) == (True, "accepted")
     assert parse_followup('{"followup":"inspect_thermal_system"}', report) == (
-        False, "policy_mismatch"
+        False,
+        "policy_mismatch",
     )
     assert parse_followup('{"followup":"collect_more_samples","execute":true}', report) == (
-        False, "invalid_fields"
+        False,
+        "invalid_fields",
     )
-    assert parse_followup('{"followup":"disable_safety"}', report) == (
-        False, "invalid_value"
-    )
+    assert parse_followup('{"followup":"disable_safety"}', report) == (False, "invalid_value")
     assert parse_followup("unsafe arbitrary text", report) == (False, "invalid_json")
 
 
