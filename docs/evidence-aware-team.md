@@ -74,3 +74,23 @@ replace the existing persistent incident runtime.
 ## Stricter audit replay invariants
 
 The completed report decoder checks more than a matching hash: only known risk/evidence states, policy actions, role categories, diagnostics, role acceptance relationships and governed risk-action combinations may be replayed. This prevents accidental or malformed stored records, even when an invalid record has a recomputed checksum, from being treated as valid governed output. **This is still not tamper-proof authentication:** an adversary with filesystem and database access can edit both the payload and checksum or substitute an entirely valid-looking report. Durable audit integrity against privileged attackers would require signed external event logs, trusted key custody and deployment-specific threat modeling.
+
+## Read-only audit summary
+
+The audit console inspects existing SQLite evidence-team reports without
+loading any language model or starting any device simulation:
+
+```powershell
+uv run python -m ares.runtime.evidence_team_audit_console --db .ares-evidence-test.sqlite
+```
+
+It checks integrity and bounded schema for the completed records it
+reads, and reports the counts of running/failed/completed tasks,
+critical incidents, rejected teams and incomplete audit coverage.
+Exit status 0 means all completed records within the database were
+verified and no unresolved tasks remained; exit status 1 indicates an
+incomplete audit (including truncation), and 2 indicates a failure to
+read or verify data. A `--limit` up to 1000 is supported. **An exit
+status of 0 does not prove that records are authentic or that physical
+devices are safe.** It only verifies the stored local simulator audit
+under these limited assumptions.
