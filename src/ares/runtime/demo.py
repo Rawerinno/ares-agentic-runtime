@@ -56,7 +56,8 @@ def run(argv: Sequence[str] | None = None) -> int:
     elif args.team == "ollama":
         team = GovernedThreeAgentTeam(
             ollama_three_role_generator(args.model, role_only=True),
-            identity=f"three-ollama-v3:{args.model}", role_only=True
+            identity=f"three-ollama-v3:{args.model}",
+            role_only=True,
         )
     report = run_incident(
         Supervisor(gateway),
