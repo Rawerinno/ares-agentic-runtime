@@ -11,6 +11,7 @@ from pathlib import Path
 from time import monotonic
 
 from ares.runtime.evidence_advisor import (
+    bounded_followup,
     ollama_evidence_generator,
     parse_followup,
     reference_followup,
@@ -75,6 +76,7 @@ def evaluate_evidence(
     evidence_correct = 0
     model_accepted = 0
     model_errors = 0
+    confusion: dict[str, dict[str, int]] = {}
     started = monotonic()
     for case in CASES:
         for iteration in range(repeats):
@@ -83,13 +85,18 @@ def evaluate_evidence(
                 evidence.state.value == case.expected and evidence.device_actions == "disabled"
             )
             evidence_correct += int(correct)
+            proposal = "no_response"
             try:
                 answer = generator(evidence)
+                proposal = bounded_followup(answer)
                 accepted, diagnostic = parse_followup(answer, evidence)
             except Exception:
                 accepted, diagnostic = False, "model_exception"
                 model_errors += 1
             model_accepted += int(accepted)
+            expected = evidence.suggested_followup
+            bucket = confusion.setdefault(expected, {})
+            bucket[proposal] = bucket.get(proposal, 0) + 1
             details.append(
                 {
                     "scenario": case.name,
@@ -99,6 +106,7 @@ def evaluate_evidence(
                     "model_accepted": accepted,
                     "diagnostic": diagnostic,
                     "safe_followup": evidence.suggested_followup,
+                    "bounded_proposal": proposal,
                 }
             )
     total = len(details)
@@ -109,6 +117,7 @@ def evaluate_evidence(
         "model_accepted": model_accepted,
         "model_errors": model_errors,
         "acceptance_rate": round(model_accepted / total, 4),
+        "followup_confusion": confusion,
         "device_actions": "disabled",
         "results": details,
         "wall_time_ms": round((monotonic() - started) * 1000, 2),
