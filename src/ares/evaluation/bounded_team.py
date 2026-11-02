@@ -129,7 +129,11 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("readings", nargs=3, help="Three numeric Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--audit-file", type=Path, help="Optional local hash-chained JSONL audit")
-    parser.add_argument("--independent-review", action="store_true", help="Optional third LLM role, arithmetic-only")
+    parser.add_argument(
+        "--independent-review",
+        action="store_true",
+        help="Optional third LLM role, arithmetic-only",
+    )
     parser.add_argument("--candidate", type=int, default=2, choices=(2, 3))
     parser.add_argument(
         "--benchmark-report",
@@ -166,8 +170,12 @@ def run(argv: Sequence[str] | None = None) -> int:
         review_correct = int(approved)
         if not approved:
             report = BoundedTeamResult(
-                "rejected", report.extracted, report.model_mean,
-                report.verified_mean, None, ("independent_review_mismatch",)
+                "rejected",
+                report.extracted,
+                report.model_mean,
+                report.verified_mean,
+                None,
+                ("independent_review_mismatch",),
             )
     wall_time_ms = (monotonic() - started) * 1000
     extraction_attempts = len(report.extracted)
