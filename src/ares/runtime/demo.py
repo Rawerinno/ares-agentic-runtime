@@ -50,11 +50,29 @@ def run(argv: Sequence[str] | None = None) -> int:
         )
     team: GovernedThreeAgentTeam | None = None
     if args.team == "offline":
-        import json as _json
 
         def offline_team(question: str) -> str:
-            fragment = question.split("containing exactly these keys and values: ", 1)[1]
-            return _json.dumps(_json.loads(fragment.rstrip(".")))
+            context = question.split("Trusted context: ", 1)[1].removesuffix(".")
+            data = json.loads(context)
+            severity = data["severity"]
+            role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+            if role == "investigator":
+                hypothesis = (
+                    "sensor_fault"
+                    if not data["healthy"] or data["temperature_c"] is None
+                    else "stable"
+                    if severity == "normal"
+                    else "thermal_load"
+                )
+                return json.dumps({"hypothesis": hypothesis, "severity": severity})
+            if role == "planner":
+                action = {
+                    "normal": "monitor",
+                    "warning": "inspect",
+                    "critical": "human_review",
+                }[severity]
+                return json.dumps({"plan": action, "severity": severity})
+            return json.dumps({"verdict": "consistent", "severity": severity})
 
         team = GovernedThreeAgentTeam(offline_team, identity="three-offline-v1")
     elif args.team == "ollama":
