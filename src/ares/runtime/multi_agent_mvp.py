@@ -9,6 +9,8 @@ import hashlib
 import json
 import sqlite3
 from dataclasses import asdict, dataclass
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import cast
 
@@ -64,8 +66,15 @@ class SqliteTaskStore:
                 "status TEXT NOT NULL, report_json TEXT, attempts INTEGER NOT NULL)"
             )
 
-    def _connection(self) -> sqlite3.Connection:
-        return sqlite3.connect(self._path, timeout=3)
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        """Commit or roll back and always close the database handle."""
+        db = sqlite3.connect(self._path, timeout=3)
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     @staticmethod
     def _decode(payload: str) -> IncidentReport:
