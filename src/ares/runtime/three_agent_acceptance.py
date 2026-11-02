@@ -76,6 +76,7 @@ def evaluate_three_roles(
     repeats: int = 2,
     scenarios: Sequence[Scenario] = SCENARIOS,
     role_only: bool = False,
+    probe_roles: bool = False,
 ) -> dict[str, object]:
     if not 1 <= repeats <= 5:
         raise ValueError("repeats must be in 1..5")
@@ -86,6 +87,8 @@ def evaluate_three_roles(
     store = SqliteTaskStore(workdir / "team-acceptance.sqlite3")
     role_names = ("investigator", "planner", "critic")
     counts = {role: RoleStat() for role in role_names}
+    isolated_counts = {role: RoleStat() for role in role_names}
+    isolated_results: list[dict[str, object]] = []
     details: list[dict[str, object]] = []
     governed_correct = 0
     full_team_pass = 0
@@ -153,6 +156,39 @@ def evaluate_three_roles(
                 team=team,
             )
             replay_ok += int(outcome == again)
+            if probe_roles:
+                assessment = supervisor.assess(agent_id="observer", tool_id="sensor")
+                for target_role in role_names:
+                    calls: list[str] = []
+
+                    def isolated(question: str) -> str:
+                        queried_role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+                        if queried_role != target_role:
+                            return reference_generate(question)
+                        return _meter(generate, isolated_counts, calls)(question)
+
+                    probe = GovernedThreeAgentTeam(
+                        isolated, identity="isolated-probe-v1", role_only=role_only
+                    ).evaluate(assessment)
+                    own = next(
+                        (h for h in probe.handoffs if h.role == target_role),
+                        None,
+                    )
+                    accepted = own is not None and own.finding.startswith("Validated:")
+                    if accepted:
+                        isolated_counts[target_role].accepted += 1
+                    isolated_results.append(
+                        {
+                            "scenario": case.name,
+                            "repeat": repetition + 1,
+                            "target_role": target_role,
+                            "accepted": accepted,
+                            "diagnostic": (
+                                own.finding if own is not None and not accepted else None
+                            ),
+                            "real_model_calls": len(calls),
+                        }
+                    )
             details.append(
                 {
                     "scenario": case.name,
@@ -194,6 +230,19 @@ def evaluate_three_roles(
         "team_acceptance_rate": round(full_team_pass / count, 4),
         "idempotent_replays": replay_ok,
         "role_metrics": role_summary,
+        "isolated_role_probes": isolated_results if probe_roles else None,
+        "isolated_role_metrics": (
+            {
+                name: {
+                    "attempted": stat.attempted,
+                    "accepted": stat.accepted,
+                    "errors": stat.errors,
+                }
+                for name, stat in isolated_counts.items()
+            }
+            if probe_roles
+            else None
+        ),
         "rejection_counts": rejection_counts,
         "results": details,
         "wall_time_ms": round((monotonic() - started) * 1000, 2),
@@ -214,6 +263,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--role-contract", choices=("role_only", "legacy"), default="role_only"
     )
+    parser.add_argument(
+        "--probe-roles", action="store_true",
+        help="Separately evaluate each model role against reference-validated peers",
+    )
     parser.add_argument("--output", type=Path, default=Path("ares-three-agent-report.json"))
     args = parser.parse_args(argv)
     role_only = args.role_contract == "role_only"
@@ -224,7 +277,8 @@ def run(argv: Sequence[str] | None = None) -> int:
     )
     with TemporaryDirectory(prefix="ares-team-") as workdir:
         report = evaluate_three_roles(
-            generate, Path(workdir), repeats=args.repeats, role_only=role_only
+            generate, Path(workdir), repeats=args.repeats,
+            role_only=role_only, probe_roles=args.probe_roles
         )
     report["model_source"] = "live_ollama" if args.live else "offline_reference"
     serialized = json.dumps(report, indent=2, sort_keys=True)
