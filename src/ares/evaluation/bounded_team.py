@@ -7,12 +7,16 @@ The reviewer never accepts a model's safety classification or tool action.
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from statistics import mean
+from threading import Lock
 from time import monotonic
 from typing import cast
 
+from ares.evaluation.concurrency_policy import choose_concurrency, load_reports
 from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
 
 
@@ -44,7 +48,9 @@ def _severity(value: Decimal) -> str:
     return "normal"
 
 
-def evaluate_team(readings: Sequence[str], generate: Generate) -> BoundedTeamResult:
+def evaluate_team(
+    readings: Sequence[str], generate: Generate, *, parallelism: int = 1
+) -> BoundedTeamResult:
     """Validate AI-proposed values against independent deterministic evidence.
 
     Caller supplies three short, human-readable temperature readings. The
@@ -53,6 +59,8 @@ def evaluate_team(readings: Sequence[str], generate: Generate) -> BoundedTeamRes
     """
     if len(readings) != 3:
         raise ValueError("exactly three readings are required")
+    if not 1 <= parallelism <= 3:
+        raise ValueError("parallelism must be 1..3")
     expected: list[Decimal] = []
     for item in readings:
         if len(item) > 100 or not item.endswith(" C"):
@@ -65,19 +73,25 @@ def evaluate_team(readings: Sequence[str], generate: Generate) -> BoundedTeamRes
             raise ValueError("reading must be a finite numeric value")
         expected.append(value)
 
-    extracted: list[str] = []
-    for source, target in zip(readings, expected, strict=True):
+    def extract(source: str) -> str:
         try:
-            proposed = generate(
+            return generate(
                 f"Extract the Celsius reading from: 'sensor: {source}'. Return only the number."
             )
         except Exception:
-            proposed = ""
-        extracted.append(proposed)
-        if _number(proposed) != target:
-            return BoundedTeamResult(
-                "rejected", tuple(extracted), None, None, None, ("extractor_mismatch",)
-            )
+            return ""
+
+    if parallelism == 1:
+        extracted = [extract(source) for source in readings]
+    else:
+        with ThreadPoolExecutor(max_workers=parallelism) as pool:
+            extracted = list(pool.map(extract, readings))
+    if any(_number(proposed) != target for proposed, target in zip(
+        extracted, expected, strict=True
+    )):
+        return BoundedTeamResult(
+            "rejected", tuple(extracted), None, None, None, ("extractor_mismatch",)
+        )
 
     prompt_values = ", ".join(extracted)
     try:
@@ -111,20 +125,31 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Bounded local 3-role read-only demo")
     parser.add_argument("readings", nargs=3, help="Three numeric Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
+    parser.add_argument("--candidate", type=int, default=2, choices=(2, 3))
+    parser.add_argument(
+        "--benchmark-report", type=Path, action="append", default=[],
+        help="Independent raw-model performance reports (3 required to enable concurrency)",
+    )
     args = parser.parse_args(argv)
+    decision = choose_concurrency(
+        load_reports(args.benchmark_report), candidate=args.candidate
+    )
     readings = tuple(f"{value} C" for value in cast("list[str]", args.readings))
     generate = ollama_generator(args.model)
     latencies_ms: list[float] = []
+    latency_lock = Lock()
 
     def timed_generate(question: str) -> str:
         started = monotonic()
         try:
             return generate(question)
         finally:
-            latencies_ms.append((monotonic() - started) * 1000)
+            elapsed = (monotonic() - started) * 1000
+            with latency_lock:
+                latencies_ms.append(elapsed)
 
     started = monotonic()
-    report = evaluate_team(readings, timed_generate)
+    report = evaluate_team(readings, timed_generate, parallelism=decision.parallelism)
     wall_time_ms = (monotonic() - started) * 1000
     extraction_attempts = len(report.extracted)
     extraction_successes = extraction_attempts - int("extractor_mismatch" in report.errors)
@@ -144,7 +169,8 @@ def run(argv: Sequence[str] | None = None) -> int:
         "latency_mean_ms": round(mean(latencies_ms), 2) if latencies_ms else None,
         "latency_max_ms": round(max(latencies_ms), 2) if latencies_ms else None,
         "wall_time_ms": round(wall_time_ms, 2),
-        "execution_mode": "sequential",
+        "execution_mode": "parallel" if decision.parallelism > 1 else "sequential",
+        "parallelism": decision.parallelism,
     }
     print(
         json.dumps(
@@ -158,6 +184,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "authority": "deterministic_reviewer",
                 "device_actions": "disabled",
                 "statistics": statistics,
+                "scheduling_decision": asdict(decision),
             },
             indent=2,
         )
