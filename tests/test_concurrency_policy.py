@@ -71,7 +71,7 @@ def test_error_or_incorrect_answer_rejects_all_trials() -> None:
         "error_count": 0,
         "wall_time_ms": 10000.0,
     }
-    decision = choose_concurrency([sample(), faulty, sample()], candidate=2)
+    decision = choose_concurrency([sample(speedup=1.2), faulty, sample(speedup=1.4)], candidate=2)
     assert decision.parallelism == 1
     assert decision.reason == "invalid_or_incorrect_trial"
 
@@ -92,7 +92,7 @@ def test_incomparable_task_counts_rejected() -> None:
         "error_count": 0,
         "wall_time_ms": 10000.0,
     }
-    decision = choose_concurrency([sample(), sample(), mismatched], candidate=2)
+    decision = choose_concurrency([sample(speedup=1.2), sample(speedup=1.4), mismatched], candidate=2)
     assert decision.reason == "incomparable_task_counts"
     assert decision.parallelism == 1
 
@@ -112,7 +112,7 @@ def test_boolean_is_not_a_valid_count() -> None:
         "error_count": 0,
         "wall_time_ms": 10000.0,
     }
-    decision = choose_concurrency([invalid, sample(), sample()], candidate=2)
+    decision = choose_concurrency([invalid, sample(speedup=1.2), sample(speedup=1.4)], candidate=2)
     assert decision.reason == "invalid_or_incorrect_trial"
 
 
