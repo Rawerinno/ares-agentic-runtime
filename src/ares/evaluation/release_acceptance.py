@@ -8,13 +8,11 @@ behavior using repeatable simulated LLM responses.
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import asdict
 from decimal import Decimal
 from pathlib import Path
-from typing import cast
 
 from ares.evaluation.audit import verify_entries
-from ares.evaluation.bounded_team import BoundedTeamResult, evaluate_team
+from ares.evaluation.bounded_team import evaluate_team
 from ares.evaluation.bounded_team_audit import record_bounded_execution
 from ares.evaluation.concurrency_policy import choose_concurrency
 from ares.evaluation.independent_review import independent_mean_review
@@ -98,7 +96,9 @@ def acceptance_report() -> dict[str, object]:
         raise RuntimeError("offline")
 
     bad = evaluate_team(("55 C", "60 C", "65 C"), unavailable)
-    checks["provider_failure_fail_closed"] = bad.status == "rejected" and bad.severity is None
+    checks["provider_failure_fail_closed"] = (
+        bad.status == "rejected" and bad.severity is None
+    )
     try:
         evaluate_team(("1e999999999 C", "60 C", "65 C"), _stub)
     except ValueError:
