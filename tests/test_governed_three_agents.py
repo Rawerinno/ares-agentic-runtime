@@ -38,7 +38,9 @@ def generator(prompt: str) -> str:
     raise ValueError("unsupported role")
 
 
-@pytest.mark.parametrize("temperature,severity", [(20.0, "normal"), (65.0, "warning"), (85.0, "critical")])
+@pytest.mark.parametrize(
+    "temperature,severity", [(20.0, "normal"), (65.0, "warning"), (85.0, "critical")]
+)
 def test_three_distinct_model_invocations_have_no_tool_authority(
     tmp_path: Path, temperature: float, severity: str
 ) -> None:
