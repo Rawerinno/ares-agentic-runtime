@@ -24,7 +24,6 @@ def reference_followup(report: EvidenceReport) -> str:
     return json.dumps({"followup": report.suggested_followup})
 
 
-
 def bounded_followup(answer: str) -> str:
     """Extract only an allowlisted model value; never return model prose."""
     if len(answer) > 256:
