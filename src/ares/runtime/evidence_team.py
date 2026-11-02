@@ -84,7 +84,7 @@ def _prompt(role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, .
         "risk_severity": triage.severity.value,
         "risk_reason": triage.risk_reason,
         "prior_proposals": [
-            {"role": item.role, "proposed": item.proposed, "diagnostic": item.diagnostic}
+            {"role": item.role, "proposed": item.proposed}
             for item in previous
         ],
     }
@@ -101,7 +101,9 @@ def _prompt(role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, .
             "otherwise => monitor. Risk takes precedence over trend."
         ),
         "critic": (
-            "Check each prior proposal against the rules above: evidence followup "
+            "Independently verify each prior proposal using authoritative context. "
+            "No acceptance flags or validator decisions are supplied. "
+            "Evidence followup rules: "
             "invalid_telemetry => validate_sensor; insufficient_history => "
             "collect_more_samples; rising_temperature => inspect_thermal_system; "
             "otherwise => continue_monitoring. Risk action: invalid_telemetry => "
@@ -197,9 +199,29 @@ def evidence_team_reference_generate(prompt: str) -> str:
         if not isinstance(prior, list):
             raise ValueError("invalid reviewer context")
         items = cast("list[dict[str, str]]", prior)
+        expected_followup = {
+            "invalid_telemetry": "validate_sensor",
+            "insufficient_history": "collect_more_samples",
+            "rising_temperature": "inspect_thermal_system",
+            "no_confirmed_rise": "continue_monitoring",
+        }[cast("str", state)]
+        expected_action = (
+            "validate_sensor"
+            if state == "invalid_telemetry"
+            else "human_review"
+            if severity == "critical"
+            else "inspect"
+            if severity == "warning" or state == "rising_temperature"
+            else "collect_evidence"
+            if state == "insufficient_history"
+            else "monitor"
+        )
+        proposals = {item.get("role"): item.get("proposed") for item in items}
         verdict = (
             "consistent"
-            if all(item.get("diagnostic") == "accepted" for item in items)
+            if len(items) == 2
+            and proposals.get("investigator") == expected_followup
+            and proposals.get("planner") == expected_action
             else "inconsistent"
         )
         return json.dumps({"verdict": verdict})
