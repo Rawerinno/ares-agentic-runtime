@@ -17,9 +17,7 @@ def _stub(question: str) -> str:
 
 @pytest.mark.parametrize("parallelism", [1, 2, 3])
 def test_scheduler_preserves_verified_results(parallelism: int) -> None:
-    result = evaluate_team(
-        ("55 C", "60 C", "65 C"), _stub, parallelism=parallelism
-    )
+    result = evaluate_team(("55 C", "60 C", "65 C"), _stub, parallelism=parallelism)
     assert result.status == "verified"
     assert result.severity == "warning"
     assert result.model_mean == "60"
@@ -38,9 +36,7 @@ def test_parallel_extractor_still_rejects_model_mismatch() -> None:
             return "66"
         return _stub(question)
 
-    result = evaluate_team(
-        ("55 C", "60 C", "65 C"), wrong, parallelism=3
-    )
+    result = evaluate_team(("55 C", "60 C", "65 C"), wrong, parallelism=3)
     assert result.status == "rejected"
     assert result.severity is None
     assert result.errors == ("extractor_mismatch",)
@@ -52,9 +48,7 @@ def test_parallel_exception_still_rejected() -> None:
             raise RuntimeError("offline")
         return _stub(question)
 
-    result = evaluate_team(
-        ("55 C", "60 C", "65 C"), unreliable, parallelism=3
-    )
+    result = evaluate_team(("55 C", "60 C", "65 C"), unreliable, parallelism=3)
     assert result.status == "rejected"
     assert result.severity is None
 
@@ -68,9 +62,7 @@ def test_parallel_workers_do_not_duplicate_samples() -> None:
             captured.append(question)
         return _stub(question)
 
-    result = evaluate_team(
-        ("55 C", "60 C", "65 C"), counting, parallelism=2
-    )
+    result = evaluate_team(("55 C", "60 C", "65 C"), counting, parallelism=2)
     assert result.status == "verified"
     assert len(captured) == 4
     assert sum("Extract" in question for question in captured) == 3
