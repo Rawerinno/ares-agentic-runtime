@@ -13,7 +13,7 @@ def _finite_decimal(text: str) -> Decimal | None:
         value = Decimal(text.strip())
     except InvalidOperation:
         return None
-    return value if value.is_finite() else None
+    return value if value.is_finite() and value.copy_abs() <= Decimal("1000000") else None
 
 
 def independent_mean_review(
