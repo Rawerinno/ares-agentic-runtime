@@ -74,9 +74,7 @@ def _interpret(role: str, answer: str) -> tuple[str, str]:
     return cast("str", proposal), "valid_structure"
 
 
-def _prompt(
-    role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, ...]
-) -> str:
+def _prompt(role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, ...]) -> str:
     context: dict[str, object] = {
         "evidence_state": triage.evidence.state.value,
         "sample_count": triage.evidence.sample_count,
@@ -140,9 +138,7 @@ class GovernedEvidenceTeam:
                 expected = expected_action
             else:
                 expected = (
-                    "consistent"
-                    if all(item.accepted for item in outputs)
-                    else "inconsistent"
+                    "consistent" if all(item.accepted for item in outputs) else "inconsistent"
                 )
             prompt = _prompt(role, triage, tuple(outputs))
             try:
@@ -201,8 +197,10 @@ def evidence_team_reference_generate(prompt: str) -> str:
         if not isinstance(prior, list):
             raise ValueError("invalid reviewer context")
         items = cast("list[dict[str, str]]", prior)
-        verdict = "consistent" if all(
-            item.get("diagnostic") == "accepted" for item in items
-        ) else "inconsistent"
+        verdict = (
+            "consistent"
+            if all(item.get("diagnostic") == "accepted" for item in items)
+            else "inconsistent"
+        )
         return json.dumps({"verdict": verdict})
     raise ValueError("unknown role")
