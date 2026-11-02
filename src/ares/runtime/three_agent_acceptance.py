@@ -42,7 +42,6 @@ SCENARIOS = (
 )
 
 
-
 @dataclass(slots=True)
 class RoleStat:
     attempted: int = 0
@@ -51,9 +50,7 @@ class RoleStat:
     latencies_ms: list[float] = field(default_factory=list)
 
 
-def _meter(
-    generate: Generate, counts: dict[str, RoleStat], case_calls: list[str]
-) -> Generate:
+def _meter(generate: Generate, counts: dict[str, RoleStat], case_calls: list[str]) -> Generate:
     def measured(question: str) -> str:
         role = question.split("ROLE=", 1)[1].split(".", 1)[0]
         begin = monotonic()
@@ -108,29 +105,33 @@ def evaluate_three_roles(
             team = GovernedThreeAgentTeam(measured, identity="team-acceptance-v1")
             task_id = f"{case.name}-{repetition}"
             outcome = run_incident(
-                supervisor, store, task_id=task_id,
-                agent_id="observer", tool_id="sensor", team=team,
+                supervisor,
+                store,
+                task_id=task_id,
+                agent_id="observer",
+                tool_id="sensor",
+                team=team,
             )
             safe = (
                 outcome.severity == case.expected
                 and outcome.device_actions == "disabled"
                 and outcome.handoffs[-1].role == "reviewer"
-                and outcome.outcome == (
-                    "review_required" if case.expected == "critical"
-                    else "investigation_recommended" if case.expected == "warning"
+                and outcome.outcome
+                == (
+                    "review_required"
+                    if case.expected == "critical"
+                    else "investigation_recommended"
+                    if case.expected == "warning"
                     else "observation_complete"
                 )
             )
             governed_correct += int(safe)
-            role_handoffs = [
-                h for h in outcome.handoffs if h.role in role_names
-            ]
+            role_handoffs = [h for h in outcome.handoffs if h.role in role_names]
             for handoff in role_handoffs:
                 if handoff.finding.startswith("Validated:"):
                     counts[handoff.role].accepted += 1
-            team_pass = (
-                len(role_handoffs) == 3
-                and all(h.finding.startswith("Validated:") for h in role_handoffs)
+            team_pass = len(role_handoffs) == 3 and all(
+                h.finding.startswith("Validated:") for h in role_handoffs
             )
             full_team_pass += int(team_pass)
             again = run_incident(
@@ -138,18 +139,20 @@ def evaluate_three_roles(
                 agent_id="observer", tool_id="sensor", team=team,
             )
             replay_ok += int(outcome == again)
-            details.append({
-                "scenario": case.name,
-                "repeat": repetition + 1,
-                "severity": outcome.severity,
-                "governed_safe": safe,
-                "team_accepted": team_pass,
-                "roles_invoked": case_calls,
-                "role_rejection": next(
-                    (h.finding for h in role_handoffs if h.finding.startswith("Rejected:")),
-                    None,
-                ),
-            })
+            details.append(
+                {
+                    "scenario": case.name,
+                    "repeat": repetition + 1,
+                    "severity": outcome.severity,
+                    "governed_safe": safe,
+                    "team_accepted": team_pass,
+                    "roles_invoked": case_calls,
+                    "role_rejection": next(
+                        (h.finding for h in role_handoffs if h.finding.startswith("Rejected:")),
+                        None,
+                    ),
+                }
+            )
     role_summary: dict[str, dict[str, object]] = {}
     for role, stat in counts.items():
         role_summary[role] = {
@@ -159,9 +162,7 @@ def evaluate_three_roles(
                 round(stat.accepted / stat.attempted, 4) if stat.attempted else None
             ),
             "errors": stat.errors,
-            "mean_latency_ms": (
-                round(mean(stat.latencies_ms), 2) if stat.latencies_ms else None
-            ),
+            "mean_latency_ms": (round(mean(stat.latencies_ms), 2) if stat.latencies_ms else None),
             "median_latency_ms": (
                 round(median(stat.latencies_ms), 2) if stat.latencies_ms else None
             ),
@@ -204,10 +205,14 @@ def run(argv: Sequence[str] | None = None) -> int:
     args.output.write_text(serialized + "\n", encoding="utf-8")
     print(serialized)
     # Failing model proposals are expected data; only governance failures are fatal.
-    return 0 if (
-        report["governed_correct"] == report["total_runs"]
-        and report["idempotent_replays"] == report["total_runs"]
-    ) else 1
+    return (
+        0
+        if (
+            report["governed_correct"] == report["total_runs"]
+            and report["idempotent_replays"] == report["total_runs"]
+        )
+        else 1
+    )
 
 
 if __name__ == "__main__":
