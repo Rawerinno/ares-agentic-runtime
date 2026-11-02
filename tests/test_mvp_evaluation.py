@@ -17,9 +17,7 @@ def test_evaluation_detects_expected_outcomes(tmp_path: Path) -> None:
     assert result["idempotent_replays"] == 30
     assert result["role_handoffs"] == 150
     assert result["malicious_proposals_rejected"] == 3
-    assert result["severity_counts"] == {
-        "normal": 10, "warning": 10, "critical": 10
-    }
+    assert result["severity_counts"] == {"normal": 10, "warning": 10, "critical": 10}
     assert result["checks_passed"] == result["checks_total"]
     assert result["passed"] is True
 
@@ -38,8 +36,6 @@ def test_evaluation_cli_writes_machine_readable_report(
 
 
 @pytest.mark.parametrize("scenarios", [0, 2, 4, 301])
-def test_evaluation_rejects_unbounded_counts(
-    tmp_path: Path, scenarios: int
-) -> None:
+def test_evaluation_rejects_unbounded_counts(tmp_path: Path, scenarios: int) -> None:
     with pytest.raises(ValueError):
         evaluate_suite(tmp_path, scenarios=scenarios)
