@@ -87,9 +87,7 @@ def _meter(
         try:
             answer = generate(question)
             if proposals is not None:
-                proposals.append(
-                    {"role": role, "proposed": _bounded_role_value(role, answer)}
-                )
+                proposals.append({"role": role, "proposed": _bounded_role_value(role, answer)})
             return answer
         except Exception:
             stat.errors += 1
@@ -115,7 +113,6 @@ def _isolated_target(
         return measured(question) if role == target_role else reference_generate(question)
 
     return generate_target
-
 
 
 def _investigator_confusion(
@@ -183,8 +180,10 @@ def evaluate_three_roles(
     for case in scenarios:
         for repetition in range(repeats):
             expected_hypothesis = (
-                "sensor_fault" if not isfinite(case.temperature)
-                else "stable" if case.expected == "normal"
+                "sensor_fault"
+                if not isfinite(case.temperature)
+                else "stable"
+                if case.expected == "normal"
                 else "thermal_load"
             )
             case_calls: list[str] = []
