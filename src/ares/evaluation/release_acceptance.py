@@ -38,7 +38,7 @@ def _severity(value: Decimal) -> str:
 def acceptance_report() -> dict[str, object]:
     """Run 121 representative boundary cases and distinct failure injections."""
     checks: dict[str, bool] = {}
-    model_calls: int = 0
+    model_prompts: list[str] = []
     completed: int = 0
     audited: tuple[AuditEntry, ...] = ()
     policy = choose_concurrency([], candidate=2)
@@ -49,8 +49,7 @@ def acceptance_report() -> dict[str, object]:
         readings = tuple(f"{value} C" for value in triple)
 
         def simulate(question: str) -> str:
-            nonlocal model_calls
-            model_calls += 1
+            model_prompts.append(question)
             return _stub(question)
 
         result = evaluate_team(readings, simulate)
@@ -63,8 +62,10 @@ def acceptance_report() -> dict[str, object]:
         completed += 1
         audited = record_bounded_execution(audited, result, policy, call_count=4, elapsed_ms=1.0)
     verify_entries(audited)
-    checks["scenario_accuracy"] = completed == 121 and model_calls == 484
-    checks["audit_chain"] = len(audited) == completed and audited[-1].sequence == completed
+    checks["scenario_accuracy"] = completed == 121 and len(model_prompts) == 484
+    checks["audit_chain"] = len(audited) == completed and all(
+        entry.sequence == idx for idx, entry in enumerate(audited, start=1)
+    )
 
     def bad_extraction(question: str) -> str:
         if question.startswith("Extract"):
@@ -103,7 +104,7 @@ def acceptance_report() -> dict[str, object]:
     return {
         "scope": "offline_stub_only",
         "scenario_count": completed,
-        "simulated_model_calls": model_calls,
+        "simulated_model_calls": len(model_prompts),
         "audit_entries_checked": len(audited),
         "checks": checks,
         "passed": sum(checks.values()),
