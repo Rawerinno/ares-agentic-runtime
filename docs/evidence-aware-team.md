@@ -41,3 +41,32 @@ or operator approval system.
 ## Blind independent critic review
 
 A critic that can read the governor's `accepted` or `policy_mismatch` verdicts is only parroting the answer key. The reviewer context therefore contains only the two allowlisted prior proposals plus the trusted risk/evidence state, not earlier validation outcomes or expected labels. The reference critic independently recomputes policy agreement from trusted context. Test fixtures assert that accepted/rejected annotations are not leaked into critic prompts. Model performance must still be established empirically; no live-model success is claimed for this change.
+
+## Durable local report audit (experimental)
+
+`DurableEvidenceStore` is a **separate** local SQLite audit store for
+bounded, simulated three-agent evidence reviews. A task is claimed
+transactionally and its request digest binds the supplied ordered
+readings and a caller-provided model/team identity. Completed reports
+replay without model calls. Different readings or model identity under
+the same task ID are rejected. Non-finite telemetry is canonicalized
+for hashing and remains classified as invalid by the safety policy.
+A cryptographic checksum detects accidental report corruption, but
+is not a digital signature and cannot prevent database tampering.
+
+The store has explicit failed-task recovery (up to three attempts).
+A claim left `running` after a host crash cannot be automatically
+taken over: an operator-controlled reconciliation is required, rather
+than unsafe silent replay. Individual model exceptions still produce
+a governed rejected advisory report.
+
+Offline example (no Ollama or external hardware):
+
+```powershell
+uv run python -m ares.runtime.evidence_team_durable_demo --db .ares-evidence-test.sqlite --task-id demo-01 --temperatures 65 70 75
+```
+
+Running that command again with the same arguments replays the stored
+output. This path does not implement distributed execution, trusted
+multi-user audit, signed records, or actuator access, and it does not
+replace the existing persistent incident runtime.
