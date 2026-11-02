@@ -92,7 +92,10 @@ def test_incomparable_task_counts_rejected() -> None:
         "error_count": 0,
         "wall_time_ms": 10000.0,
     }
-    decision = choose_concurrency([sample(speedup=1.2), sample(speedup=1.4), mismatched], candidate=2)
+    decision = choose_concurrency(
+        [sample(speedup=1.2), sample(speedup=1.4), mismatched],
+        candidate=2,
+    )
     assert decision.reason == "incomparable_task_counts"
     assert decision.parallelism == 1
 
