@@ -78,7 +78,9 @@ def test_role_only_ollama_schema_requires_one_field(monkeypatch: MonkeyPatch) ->
     assert json.loads(generate("ROLE=investigator. Trusted context: {}.")) == {
         "hypothesis": "thermal_load"
     }
-    assert "severity" not in cast("dict[str, object]", transport.calls[0]["format"])["required"]
+    fields = cast("dict[str, object]", transport.calls[0]["format"])
+    required = cast("list[str]", fields["required"])
+    assert "severity" not in required
 
 
 def test_isolated_probes_reach_downstream_roles_after_investigator_failure(
@@ -116,4 +118,7 @@ def test_role_only_reference_acceptance_all_scenarios(tmp_path: Path) -> None:
     assert report["full_team_accepted"] == 9
     metrics = report["isolated_role_metrics"]
     assert isinstance(metrics, dict)
-    assert all(metrics[role]["accepted"] == 9 for role in ("investigator", "planner", "critic"))
+    assert all(
+        cast("dict[str, int]", metrics[role])["accepted"] == 9
+        for role in ("investigator", "planner", "critic")
+    )
