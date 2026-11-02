@@ -72,10 +72,13 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
     if set(data) != allowed:
         raise ValueError("stored evidence report fields malformed")
     roles = data["roles"]
-    if not isinstance(roles, list) or len(roles) != 3:
+    if not isinstance(roles, list):
+        raise ValueError("stored evidence report roles malformed")
+    checked_roles = cast("list[object]", roles)
+    if len(checked_roles) != 3:
         raise ValueError("stored evidence report roles malformed")
     entries: list[ReviewedRole] = []
-    for role in cast("list[object]", roles):
+    for role in checked_roles:
         if not isinstance(role, dict):
             raise ValueError("stored evidence role malformed")
         fields = cast("dict[str, object]", role)
@@ -90,7 +93,7 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
                 cast("str", fields["role"]),
                 cast("str", fields["proposed"]),
                 cast("str", fields["expected"]),
-                cast("bool", fields["accepted"]),
+                fields["accepted"],
                 cast("str", fields["diagnostic"]),
             )
         )
@@ -119,7 +122,7 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         cast("str", data["evidence_state"]),
         cast("str", data["authorized_action"]),
         tuple(entries),
-        cast("bool", data["team_accepted"]),
+        data["team_accepted"],
     )
 
 
