@@ -70,3 +70,7 @@ Running that command again with the same arguments replays the stored
 output. This path does not implement distributed execution, trusted
 multi-user audit, signed records, or actuator access, and it does not
 replace the existing persistent incident runtime.
+
+## Stricter audit replay invariants
+
+The completed report decoder checks more than a matching hash: only known risk/evidence states, policy actions, role categories, diagnostics, role acceptance relationships and governed risk-action combinations may be replayed. This prevents accidental or malformed stored records, even when an invalid record has a recomputed checksum, from being treated as valid governed output. **This is still not tamper-proof authentication:** an adversary with filesystem and database access can edit both the payload and checksum or substitute an entirely valid-looking report. Durable audit integrity against privileged attackers would require signed external event logs, trusted key custody and deployment-specific threat modeling.
