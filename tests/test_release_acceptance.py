@@ -23,9 +23,7 @@ def test_acceptance_is_deterministic_and_all_scenarios_pass() -> None:
     assert checks["provider_failure_fail_closed"] is True
 
 
-def test_acceptance_cli_generates_json_report(
-    tmp_path: Path, capsys: CaptureFixture[str]
-) -> None:
+def test_acceptance_cli_generates_json_report(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
     output = tmp_path / "report.json"
     assert run(["--output", str(output)]) == 0
     report = json.loads(output.read_text(encoding="utf-8"))
