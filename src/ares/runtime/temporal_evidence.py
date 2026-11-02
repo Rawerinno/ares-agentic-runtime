@@ -4,10 +4,11 @@ This module does not infer physical root causes from a temperature alone.
 A thermal rise is an observation, not proof of thermal load or sensor failure.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import pairwise
 from math import isfinite
-from collections.abc import Sequence
 
 
 class EvidenceState(StrEnum):
@@ -76,7 +77,7 @@ def analyze_evidence(
         # A single anomalous point should not establish a persistent rise.
         monotone = all(
             later.temperature_c >= earlier.temperature_c
-            for earlier, later in zip(valid, valid[1:], strict=False)
+            for earlier, later in pairwise(valid)
         )
         state = (
             EvidenceState.RISING_TEMPERATURE
