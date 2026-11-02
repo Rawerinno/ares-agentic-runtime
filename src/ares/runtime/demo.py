@@ -6,13 +6,13 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 
+from ares.evaluation.ollama_capability_boundary import ollama_generator
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.decisions import ModelAdapter
 from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import ProviderClient, RequestLimits
-from ares.evaluation.ollama_capability_boundary import ollama_generator
 from ares.runtime.governed_three_agents import GovernedThreeAgentTeam
 from ares.runtime.multi_agent_mvp import SqliteTaskStore, run_incident
 from ares.safety import Capability, Policy
