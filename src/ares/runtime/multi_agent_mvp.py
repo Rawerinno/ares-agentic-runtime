@@ -77,7 +77,7 @@ class SqliteTaskStore:
         if not isinstance(roles, list):
             raise ValueError("stored role handoffs are malformed")
         handoffs: list[RoleHandoff] = []
-        for item in roles:
+        for item in cast("list[object]", roles):
             if not isinstance(item, dict):
                 raise ValueError("stored role handoff is malformed")
             handoffs.append(RoleHandoff(**cast("dict[str, str]", item)))
