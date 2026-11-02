@@ -45,3 +45,7 @@ on real devices or measurements.
 ## Diagnostic follow-up confusion
 
 The first live evidence benchmark classified all nine synthetic histories with deterministic rules, but accepted only four of nine Llama follow-ups. Three no-rise and two invalid-telemetry cases were rejected; the original report did not show which allowable action the model selected. The updated evaluator records `bounded_proposal` per case and `followup_confusion`, a table of trusted recommended follow-up versus the model's allowlisted category. Unknown or malformed model strings become `unrecognized`, exceptions become `no_response`, and arbitrary model text is not stored. This is observational diagnostic data, not model-granted authority.
+
+## Independent incident-window risk in acceptance reports
+
+The evidence acceptance CLI now records the conservative `risk_severity`, `risk_reason` and `risk_action` in each synthetic scenario. Risk is calculated independently of the model's candidate `followup` and of the evidence-state follow-up benchmark. Aggregate `risk_counts` show how often an incident window reaches each simulated threshold. For example, a cooling trace following 85°C remains critical, and a flat 60°C trace remains warning despite lacking a rising trend. The new fields do not constitute hardware certification or any permission to operate a device. Historical risk has only the bounded scope of supplied readings; cross-session persistence and authorized clearance are still future work.
