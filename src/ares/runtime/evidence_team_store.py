@@ -96,7 +96,10 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         "safety_authority",
     )):
         raise ValueError("stored evidence header malformed")
-    if data["device_actions"] != "disabled" or data["safety_authority"] != "deterministic_evidence_risk":
+    if (
+        data["device_actions"] != "disabled"
+        or data["safety_authority"] != "deterministic_evidence_risk"
+    ):
         raise ValueError("stored report cannot contain executable authority")
     if type(data["team_accepted"]) is not bool:
         raise ValueError("stored team acceptance malformed")
