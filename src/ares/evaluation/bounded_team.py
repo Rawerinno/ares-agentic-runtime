@@ -16,6 +16,8 @@ from threading import Lock
 from time import monotonic
 from typing import cast
 
+from ares.evaluation.audit_storage import extend_audit, read_audit
+from ares.evaluation.bounded_team_audit import record_bounded_execution
 from ares.evaluation.concurrency_policy import choose_concurrency, load_reports
 from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
 
@@ -125,6 +127,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Bounded local 3-role read-only demo")
     parser.add_argument("readings", nargs=3, help="Three numeric Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
+    parser.add_argument("--audit-file", type=Path, help="Optional local hash-chained JSONL audit")
     parser.add_argument("--candidate", type=int, default=2, choices=(2, 3))
     parser.add_argument(
         "--benchmark-report",
@@ -173,6 +176,15 @@ def run(argv: Sequence[str] | None = None) -> int:
         "execution_mode": "parallel" if decision.parallelism > 1 else "sequential",
         "parallelism": decision.parallelism,
     }
+    audit_digest: str | None = None
+    if args.audit_file is not None:
+        previous = read_audit(args.audit_file)
+        audit = record_bounded_execution(
+            previous, report, decision, call_count=len(latencies_ms),
+            elapsed_ms=wall_time_ms,
+        )
+        extend_audit(args.audit_file, previous, audit)
+        audit_digest = audit[-1].digest
     print(
         json.dumps(
             {
@@ -186,6 +198,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 "device_actions": "disabled",
                 "statistics": statistics,
                 "scheduling_decision": asdict(decision),
+                "audit_digest": audit_digest,
             },
             indent=2,
         )
