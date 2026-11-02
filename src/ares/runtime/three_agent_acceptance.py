@@ -135,8 +135,12 @@ def evaluate_three_roles(
             )
             full_team_pass += int(team_pass)
             again = run_incident(
-                supervisor, store, task_id=task_id,
-                agent_id="observer", tool_id="sensor", team=team,
+                supervisor,
+                store,
+                task_id=task_id,
+                agent_id="observer",
+                tool_id="sensor",
+                team=team,
             )
             replay_ok += int(outcome == again)
             details.append(
