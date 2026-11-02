@@ -16,6 +16,7 @@ from ares.runtime.evidence_advisor import (
     parse_followup,
     reference_followup,
 )
+from ares.runtime.evidence_risk import RiskSeverity, reconcile
 from ares.runtime.temporal_evidence import EvidenceReading, EvidenceReport, analyze_evidence
 
 
@@ -77,10 +78,13 @@ def evaluate_evidence(
     model_accepted = 0
     model_errors = 0
     confusion: dict[str, dict[str, int]] = {}
+    risk_counts: dict[str, int] = {level.value: 0 for level in RiskSeverity}
     started = monotonic()
     for case in CASES:
         for iteration in range(repeats):
             evidence = analyze_evidence(case.readings)
+            triage = reconcile(case.readings)
+            risk_counts[triage.severity.value] += 1
             correct = (
                 evidence.state.value == case.expected and evidence.device_actions == "disabled"
             )
@@ -107,6 +111,9 @@ def evaluate_evidence(
                     "diagnostic": diagnostic,
                     "safe_followup": evidence.suggested_followup,
                     "bounded_proposal": proposal,
+                    "risk_severity": triage.severity.value,
+                    "risk_reason": triage.risk_reason,
+                    "risk_action": triage.next_action.value,
                 }
             )
     total = len(details)
@@ -118,12 +125,15 @@ def evaluate_evidence(
         "model_errors": model_errors,
         "acceptance_rate": round(model_accepted / total, 4),
         "followup_confusion": confusion,
+        "risk_counts": risk_counts,
+        "risk_authority": "deterministic_incident_window",
         "device_actions": "disabled",
         "results": details,
         "wall_time_ms": round((monotonic() - started) * 1000, 2),
         "limitations": (
             "Synthetic evidence states, not verified physical diagnoses. "
-            "Follow-up proposals are read-only advisory; no hardware use."
+            "Follow-up proposals are read-only advisory; risk is derived "
+            "independently from incident-window telemetry; no hardware use."
         ),
     }
 
