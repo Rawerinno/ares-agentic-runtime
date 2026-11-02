@@ -15,9 +15,7 @@ def _safe(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
-def render_dashboard(
-    reports: Sequence[IncidentReport], statuses: Mapping[str, int]
-) -> str:
+def render_dashboard(reports: Sequence[IncidentReport], statuses: Mapping[str, int]) -> str:
     """Return an escaped, self-contained, static incident overview."""
     counts = {
         key: sum(report.severity == key for report in reports)
@@ -46,23 +44,23 @@ def render_dashboard(
         )
         items.append(
             f'<section class="incident {report.severity}">'
-            f'<h2>{_safe(report.task_id)}</h2>'
-            f'<p><b>Device:</b> {_safe(report.device_id)}'
-            f' · <b>Step:</b> {_safe(report.observed_step)}'
-            f' · <b>Temperature:</b> {_safe(report.temperature_c)} °C'
-            f' · <b>Severity:</b> {_safe(report.severity)}'
-            f' · <b>Outcome:</b> {_safe(report.outcome)}</p>'
-            '<details><summary>Inspect agent handoffs</summary>'
-            '<table><thead><tr><th>Role</th><th>Finding</th>'
-            '<th>Recommendation</th></tr></thead><tbody>'
-            f'{rows}</tbody></table></details></section>'
+            f"<h2>{_safe(report.task_id)}</h2>"
+            f"<p><b>Device:</b> {_safe(report.device_id)}"
+            f" · <b>Step:</b> {_safe(report.observed_step)}"
+            f" · <b>Temperature:</b> {_safe(report.temperature_c)} °C"
+            f" · <b>Severity:</b> {_safe(report.severity)}"
+            f" · <b>Outcome:</b> {_safe(report.outcome)}</p>"
+            "<details><summary>Inspect agent handoffs</summary>"
+            "<table><thead><tr><th>Role</th><th>Finding</th>"
+            "<th>Recommendation</th></tr></thead><tbody>"
+            f"{rows}</tbody></table></details></section>"
         )
     body = "\n".join(items) if items else "<p>No completed incidents recorded.</p>"
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta http-equiv="Content-Security-Policy" '
-        'content="default-src \'none\'; style-src \'unsafe-inline\';">'
+        "content=\"default-src 'none'; style-src 'unsafe-inline';\">"
         "<title>ARES · Offline Operations</title>"
         "<style>"
         ":root{font-family:system-ui,sans-serif;color:#16233b;background:#f3f5f9}"
