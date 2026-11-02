@@ -6,8 +6,8 @@ It reports each role separately and never grants model-based safety authority.
 
 import argparse
 import json
-from collections.abc import Callable, Sequence
-from dataclasses import asdict, dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from statistics import mean, median
@@ -110,6 +110,7 @@ def run_suite(
                 and Decimal(outcome.verified_mean) == expected_mean
                 and independent_passed
             )
+            extraction_index = 0
             for role, answer, elapsed, error in calls:
                 if role not in role_results:
                     continue
@@ -120,10 +121,8 @@ def run_suite(
                 latencies = cast("list[float]", item["latencies_ms"])
                 latencies.append(elapsed)
                 if role == "extractor":
-                    index = sum(existing_role == "extractor" for existing_role, *_ in calls[
-                        :calls.index((role, answer, elapsed, error))
-                    ])
-                    expected = case.readings[index]
+                    expected = case.readings[extraction_index]
+                    extraction_index += 1
                 else:
                     expected = case.expected_mean
                 if not error and _grade(answer, expected):
