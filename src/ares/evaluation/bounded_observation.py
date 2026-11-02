@@ -61,7 +61,12 @@ def observe(
 
     if any(_number(answer) != value for answer, value in zip(extracted, expected, strict=True)):
         return ObservationResult(
-            "rejected", tuple(extracted), None, None, None, None,
+            "rejected",
+            tuple(extracted),
+            None,
+            None,
+            None,
+            None,
             ("extractor_mismatch",),
         )
 
@@ -83,8 +88,13 @@ def observe(
             errors = ("advisory_arithmetic_mismatch",)
 
     return ObservationResult(
-        "verified", tuple(extracted), str(verified), _severity(verified),
-        advisory, advisory_correct, errors,
+        "verified",
+        tuple(extracted),
+        str(verified),
+        _severity(verified),
+        advisory,
+        advisory_correct,
+        errors,
     )
 
 
