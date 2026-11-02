@@ -8,7 +8,7 @@ capabilities, network transports or unauthenticated human approvals exist.
 import hashlib
 import json
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -67,7 +67,7 @@ class SqliteTaskStore:
             )
 
     @contextmanager
-    def _connection(self) -> Iterator[sqlite3.Connection]:
+    def _connection(self) -> Generator[sqlite3.Connection]:
         """Commit or roll back and always close the database handle."""
         db = sqlite3.connect(self._path, timeout=3)
         try:
