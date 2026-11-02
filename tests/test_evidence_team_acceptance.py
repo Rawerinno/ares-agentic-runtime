@@ -12,7 +12,9 @@ from ares.runtime.evidence_team import evidence_team_reference_generate
 from ares.runtime.evidence_team_acceptance import evaluate_team, run
 
 
-def test_offline_reference_three_role_acceptance(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
+def test_offline_reference_three_role_acceptance(
+    tmp_path: Path, capsys: CaptureFixture[str]
+) -> None:
     report = evaluate_team(evidence_team_reference_generate)
     assert report["total_runs"] == 9
     assert report["full_teams_accepted"] == 9
