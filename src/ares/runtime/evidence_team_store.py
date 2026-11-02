@@ -120,12 +120,18 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
     if data["severity"] not in ("normal", "warning", "critical"):
         raise ValueError("stored risk severity invalid")
     if data["evidence_state"] not in (
-        "invalid_telemetry", "insufficient_history",
-        "rising_temperature", "no_confirmed_rise",
+        "invalid_telemetry",
+        "insufficient_history",
+        "rising_temperature",
+        "no_confirmed_rise",
     ):
         raise ValueError("stored evidence state invalid")
     if data["authorized_action"] not in (
-        "monitor", "collect_evidence", "inspect", "validate_sensor", "human_review",
+        "monitor",
+        "collect_evidence",
+        "inspect",
+        "validate_sensor",
+        "human_review",
     ):
         raise ValueError("stored risk action invalid")
     expected_by_role = (
@@ -139,9 +145,14 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         {"consistent", "inconsistent"},
     )
     diagnostic_codes = {
-        "accepted", "policy_mismatch", "oversized_response",
-        "invalid_json", "invalid_shape", "invalid_fields",
-        "invalid_value", "model_exception",
+        "accepted",
+        "policy_mismatch",
+        "oversized_response",
+        "invalid_json",
+        "invalid_shape",
+        "invalid_fields",
+        "invalid_value",
+        "model_exception",
     }
     for item, allowed_values in zip(entries, expected_by_role, strict=True):
         if item.expected not in allowed_values:
