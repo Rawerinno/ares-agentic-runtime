@@ -69,7 +69,6 @@ def _meter(generate: Generate, counts: dict[str, RoleStat], case_calls: list[str
     return measured
 
 
-
 def _isolated_target(
     generate: Generate,
     counts: dict[str, RoleStat],
@@ -178,9 +177,7 @@ def evaluate_three_roles(
                 for target_role in role_names:
                     calls: list[str] = []
 
-                    isolated = _isolated_target(
-                        generate, isolated_counts, target_role, calls
-                    )
+                    isolated = _isolated_target(generate, isolated_counts, target_role, calls)
 
                     probe = GovernedThreeAgentTeam(
                         isolated, identity="isolated-probe-v1", role_only=role_only
@@ -275,11 +272,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--live", action="store_true", help="Use local Ollama instead of baseline")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--repeats", type=int, default=2)
+    parser.add_argument("--role-contract", choices=("role_only", "legacy"), default="role_only")
     parser.add_argument(
-        "--role-contract", choices=("role_only", "legacy"), default="role_only"
-    )
-    parser.add_argument(
-        "--probe-roles", action="store_true",
+        "--probe-roles",
+        action="store_true",
         help="Separately evaluate each model role against reference-validated peers",
     )
     parser.add_argument("--output", type=Path, default=Path("ares-three-agent-report.json"))
@@ -292,8 +288,11 @@ def run(argv: Sequence[str] | None = None) -> int:
     )
     with TemporaryDirectory(prefix="ares-team-") as workdir:
         report = evaluate_three_roles(
-            generate, Path(workdir), repeats=args.repeats,
-            role_only=role_only, probe_roles=args.probe_roles
+            generate,
+            Path(workdir),
+            repeats=args.repeats,
+            role_only=role_only,
+            probe_roles=args.probe_roles,
         )
     report["model_source"] = "live_ollama" if args.live else "offline_reference"
     serialized = json.dumps(report, indent=2, sort_keys=True)
