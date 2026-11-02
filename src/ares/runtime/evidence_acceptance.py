@@ -29,7 +29,8 @@ CASES = (
     EvidenceCase("single_normal", (EvidenceReading(0, 20.0),), "insufficient_history"),
     EvidenceCase("single_hot", (EvidenceReading(0, 85.0),), "insufficient_history"),
     EvidenceCase(
-        "two_hot", (EvidenceReading(0, 75.0), EvidenceReading(1, 85.0)),
+        "two_hot",
+        (EvidenceReading(0, 75.0), EvidenceReading(1, 85.0)),
         "insufficient_history",
     ),
     EvidenceCase(
