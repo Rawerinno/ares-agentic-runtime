@@ -41,3 +41,7 @@ Both run nine synthetic scenarios. The report separates the correctness
 of evidence classifications from the LLM's rate of valid suggestions,
 and redacts arbitrary model output. This does not establish reliability
 on real devices or measurements.
+
+## Diagnostic follow-up confusion
+
+The first live evidence benchmark classified all nine synthetic histories with deterministic rules, but accepted only four of nine Llama follow-ups. Three no-rise and two invalid-telemetry cases were rejected; the original report did not show which allowable action the model selected. The updated evaluator records `bounded_proposal` per case and `followup_confusion`, a table of trusted recommended follow-up versus the model's allowlisted category. Unknown or malformed model strings become `unrecognized`, exceptions become `no_response`, and arbitrary model text is not stored. This is observational diagnostic data, not model-granted authority.
