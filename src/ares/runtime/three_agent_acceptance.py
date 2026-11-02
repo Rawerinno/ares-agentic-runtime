@@ -75,6 +75,7 @@ def evaluate_three_roles(
     *,
     repeats: int = 2,
     scenarios: Sequence[Scenario] = SCENARIOS,
+    role_only: bool = False,
 ) -> dict[str, object]:
     if not 1 <= repeats <= 5:
         raise ValueError("repeats must be in 1..5")
@@ -104,7 +105,9 @@ def evaluate_three_roles(
                 "sensor", DeviceSimulator("sim-team", initial_temperature_c=case.temperature)
             )
             supervisor = Supervisor(gateway)
-            team = GovernedThreeAgentTeam(measured, identity="team-acceptance-v1")
+            team = GovernedThreeAgentTeam(
+                measured, identity="team-acceptance-v2", role_only=role_only
+            )
             task_id = f"{case.name}-{repetition}"
             outcome = run_incident(
                 supervisor,
@@ -181,6 +184,7 @@ def evaluate_three_roles(
     count = len(details)
     return {
         "scope": "governed_three_roles",
+        "role_contract": "role_only" if role_only else "legacy_severity_echo",
         "scenarios": len(scenarios),
         "repeats": repeats,
         "total_runs": count,
@@ -207,11 +211,21 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--live", action="store_true", help="Use local Ollama instead of baseline")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument("--repeats", type=int, default=2)
+    parser.add_argument(
+        "--role-contract", choices=("role_only", "legacy"), default="role_only"
+    )
     parser.add_argument("--output", type=Path, default=Path("ares-three-agent-report.json"))
     args = parser.parse_args(argv)
-    generate = ollama_three_role_generator(args.model) if args.live else reference_generate
+    role_only = args.role_contract == "role_only"
+    generate = (
+        ollama_three_role_generator(args.model, role_only=role_only)
+        if args.live
+        else reference_generate
+    )
     with TemporaryDirectory(prefix="ares-team-") as workdir:
-        report = evaluate_three_roles(generate, Path(workdir), repeats=args.repeats)
+        report = evaluate_three_roles(
+            generate, Path(workdir), repeats=args.repeats, role_only=role_only
+        )
     report["model_source"] = "live_ollama" if args.live else "offline_reference"
     serialized = json.dumps(report, indent=2, sort_keys=True)
     args.output.write_text(serialized + "\n", encoding="utf-8")
