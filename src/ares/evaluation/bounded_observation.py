@@ -47,13 +47,8 @@ class ObservationResult:
     error_codes: tuple[str, ...]
 
 
-def observe(
-    readings: Sequence[str],
-    generate: Generate,
-    *,
-    evaluate_arithmetic: bool = False,
-) -> ObservationResult:
-    """Fail closed on incorrect extraction; never trust the model for arithmetic."""
+def _parse_readings(readings: Sequence[str]) -> list[Decimal]:
+    """Validate bounded three-reading inputs before any model call."""
     if len(readings) != 3:
         raise ValueError("exactly three readings are required")
     expected: list[Decimal] = []
@@ -67,6 +62,33 @@ def observe(
         if value is None:
             raise ValueError("invalid or unbounded Celsius value")
         expected.append(value)
+
+    return expected
+
+
+def observe_structured(readings: Sequence[str]) -> ObservationResult:
+    """Fast path for trusted structured fields: zero LLM calls."""
+    expected = _parse_readings(readings)
+    verified = sum(expected, Decimal(0)) / Decimal(3)
+    return ObservationResult(
+        "verified",
+        tuple(str(value) for value in expected),
+        str(verified),
+        _severity(verified),
+        None,
+        None,
+        (),
+    )
+
+
+def observe(
+    readings: Sequence[str],
+    generate: Generate,
+    *,
+    evaluate_arithmetic: bool = False,
+) -> ObservationResult:
+    """Fail closed on incorrect extraction; never trust the model for arithmetic."""
+    expected = _parse_readings(readings)
 
     extracted: list[str] = []
     for raw in readings:
@@ -122,6 +144,12 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("readings", nargs=3, help="Three simple Celsius readings")
     parser.add_argument("--model", default="llama3.2:3b")
     parser.add_argument(
+        "--input-mode",
+        choices=("structured", "llm"),
+        default="structured",
+        help="Structured fields use a deterministic zero-model path (default)",
+    )
+    parser.add_argument(
         "--evaluate-arithmetic",
         action="store_true",
         help="Log LLM calculation as non-authoritative diagnostic",
@@ -129,22 +157,28 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     readings = tuple(f"{value} C" for value in args.readings)
-    model = ollama_generator(args.model)
+    if args.input_mode == "structured" and args.evaluate_arithmetic:
+        parser.error("--evaluate-arithmetic requires --input-mode llm")
     latencies: list[float] = []
-
-    def measured(prompt: str) -> str:
-        start = monotonic()
-        try:
-            return model(prompt)
-        finally:
-            latencies.append((monotonic() - start) * 1000)
-
     started = monotonic()
-    report = observe(readings, measured, evaluate_arithmetic=args.evaluate_arithmetic)
+    if args.input_mode == "structured":
+        report = observe_structured(readings)
+    else:
+        model = ollama_generator(args.model)
+
+        def measured(prompt: str) -> str:
+            start = monotonic()
+            try:
+                return model(prompt)
+            finally:
+                latencies.append((monotonic() - start) * 1000)
+
+        report = observe(readings, measured, evaluate_arithmetic=args.evaluate_arithmetic)
     payload = {
         **asdict(report),
         "authority": "deterministic_python",
-        "model_authority": "verified_extraction_only",
+        "model_authority": ("verified_extraction_only" if args.input_mode == "llm" else "none"),
+        "input_mode": args.input_mode,
         "device_actions": "disabled",
         "metrics": {
             "model_calls": len(latencies),
