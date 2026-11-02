@@ -1,17 +1,75 @@
-"""Role-specific structured localhost Ollama calls for the governed team.
+"""Role-specific structured localhost Ollama transport for three governed agents.
 
-Ollama produces the role JSON object directly, not a nested answer string.
-The deterministic three-agent governor still validates every proposed field.
+The model returns a JSON object, not a JSON-encoded string embedded in
+an `answer` property. Outputs remain entirely untrusted until the ARES
+governor validates them. No tools, approval or actuation are exposed.
 """
 
 import json
+from collections.abc import Callable
 from typing import cast
 
 from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import RequestLimits
-from ares.runtime.governed_three_agents import GovernedThreeAgentTeam
 
 
-def ollama_three_role_generator(model: str, *, timeout: float = 30.0) -> str:
-    """Deprecated placeholder to retain no implicit network calls."""
-    raise NotImplementedError
+def ollama_three_role_generator(
+    model: str, *, timeout: float = 30.0
+) -> Callable[[str], str]:
+    """Create strictly local, bounded role-specific JSON generation."""
+    if not model.strip() or len(model) > 120:
+        raise ValueError("model must have 1..120 nonblank characters")
+    limits = RequestLimits(timeout_seconds=timeout, max_response_bytes=8192)
+    transport = OllamaLocalTransport()
+    role_fields = {
+        "investigator": ("hypothesis", ("stable", "thermal_load", "sensor_fault")),
+        "planner": ("plan", ("monitor", "inspect", "human_review")),
+        "critic": ("verdict", ("consistent", "inconsistent")),
+    }
+
+    def generate(question: str) -> str:
+        role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+        if role not in role_fields:
+            raise ValueError("unsupported LLM role")
+        field, values = role_fields[role]
+        schema: dict[str, object] = {
+            "type": "object",
+            "properties": {
+                field: {"type": "string", "enum": list(values)},
+                "severity": {
+                    "type": "string",
+                    "enum": ["normal", "warning", "critical"],
+                },
+            },
+            "required": [field, "severity"],
+            "additionalProperties": False,
+        }
+        payload = {
+            "model": model,
+            "prompt": (
+                "You are an untrusted, read-only engineering analyst. "
+                "Return exactly one JSON object with the two required keys, "
+                f"{field} and severity. Do not use Markdown or an answer wrapper. "
+                "The supplied telemetry is authoritative. "
+                "No external tools or equipment commands are permitted.\n"
+                + question
+            ),
+            "stream": False,
+            "think": False,
+            "format": schema,
+            "options": {"temperature": 0, "num_predict": 128},
+        }
+        response = transport.request(json.dumps(payload).encode("utf-8"), limits=limits)
+        envelope: object = json.loads(response)
+        if not isinstance(envelope, dict):
+            raise ValueError("ollama_invalid_envelope")
+        answer = cast("dict[str, object]", envelope).get("response")
+        if not isinstance(answer, str) or len(answer) > 512:
+            raise ValueError("ollama_invalid_content")
+        decoded: object = json.loads(answer)
+        if not isinstance(decoded, dict):
+            raise ValueError("ollama_invalid_object")
+        # No semantic acceptance here: the deterministic governor owns validation.
+        return json.dumps(decoded, separators=(",", ":"), ensure_ascii=True)
+
+    return generate
