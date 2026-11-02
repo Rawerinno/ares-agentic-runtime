@@ -22,9 +22,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     device = DeviceSimulator("demo-sim", initial_temperature_c=args.temperature)
-    gateway = ReadOnlyToolGateway(
-        Policy(frozenset({("observer", "sensor", Capability.READ)}))
-    )
+    gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
     gateway.register_sensor("sensor", device)
     store = SqliteTaskStore(args.db)
     report = run_incident(
@@ -37,8 +35,11 @@ def run(argv: Sequence[str] | None = None) -> int:
     )
     print(
         json.dumps(
-            {"report": asdict(report), "tasks": store.summary(),
-             "execution_scope": "offline_deterministic_simulation"},
+            {
+                "report": asdict(report),
+                "tasks": store.summary(),
+                "execution_scope": "offline_deterministic_simulation",
+            },
             indent=2,
         )
     )
