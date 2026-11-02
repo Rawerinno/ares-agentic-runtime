@@ -44,3 +44,30 @@ The command is a reproducible engineering demonstration, **not**
 a production service or user-facing control plane. Further milestones
 include signed/trusted approvals, external integrations, failure-injection
 and multiple agent processes, authenticated APIs, and operations UI.
+
+## Optional proposal-only model advisor
+
+The deterministic observer/diagnostician/planner/reviewer workflow now
+supports an optional additional `model_advisor` role. This role uses
+the existing strict `BoundedProposalEngine`, which only accepts
+`observe`, `investigate`, or `request_review` and rejects any
+attempt to change authoritative severity. Rejected or unavailable
+models leave the deterministic incident report intact and store a
+coded advisory failure. The model cannot access any tool from this
+workflow.
+
+```powershell
+uv run python -m ares.runtime.demo --temperature 85 --task-id offline-advice --advisor offline
+uv run python -m ares.runtime.demo --temperature 85 --task-id local-llm-advice --advisor ollama --model llama3.2:3b
+```
+
+Only the second command invokes the local Ollama model. A new task ID
+is required when changing advisory mode, because a completed task
+is immutable. The same task ID always replays a previously completed
+report instead of invoking the model again. None of these commands
+write to equipment or grant human approval.
+
+The added `model_advisor` is an advisory role in one Python process.
+This is not yet a persistent process-per-agent or distributed multi-LLM
+orchestrator. The real Ollama advisory path remains to be tested in
+the user's eventual consolidated local acceptance session.
