@@ -46,6 +46,20 @@ def ollama_three_role_generator(
             "required": required,
             "additionalProperties": False,
         }
+        # The local 3B model frequently confuses healthy telemetry with a sensor
+        # fault. Give it bounded interpretation examples, not an answer for the
+        # current scenario. The deterministic governor still validates outputs.
+        role_guidance = (
+            "Investigator decision order: first inspect trusted healthy and "
+            "temperature_c. sensor_fault ONLY if healthy is false or "
+            "temperature_c is null/non-finite. If healthy is true and the "
+            "temperature is finite, NEVER select sensor_fault: use stable for "
+            "normal severity and thermal_load for warning or critical severity. "
+            "Examples: {healthy:true,temperature_c:18,severity:normal} => stable; "
+            "{healthy:true,temperature_c:65,severity:warning} => thermal_load; "
+            "{healthy:true,temperature_c:95,severity:critical} => thermal_load; "
+            "{healthy:false,temperature_c:null,severity:critical} => sensor_fault. "
+        ) if role == "investigator" else ""
         payload = {
             "model": model,
             "prompt": (
@@ -54,6 +68,7 @@ def ollama_three_role_generator(
                 + (field if role_only else f"{field} and severity")
                 + ". Do not use Markdown or an answer wrapper. "
                 "The supplied telemetry is authoritative. "
+                + role_guidance
                 "No external tools or equipment commands are permitted.\n" + question
             ),
             "stream": False,
