@@ -71,7 +71,7 @@ def _interpret(role: str, answer: str) -> tuple[str, str]:
     proposal = data[field]
     if type(proposal) is not str or proposal not in allowed:
         return "unrecognized", "invalid_value"
-    return cast("str", proposal), "valid_structure"
+    return proposal, "valid_structure"
 
 
 def _prompt(role: str, triage: ReconciledTriage, previous: tuple[ReviewedRole, ...]) -> str:
