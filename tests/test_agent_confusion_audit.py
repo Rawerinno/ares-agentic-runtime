@@ -31,8 +31,12 @@ def test_wrong_hypothesis_is_captured_without_unsafe_text(tmp_path: Path) -> Non
         return reference_generate(question)
 
     report = evaluate_three_roles(
-        unsafe, tmp_path, repeats=1, scenarios=(SCENARIOS[4],),
-        role_only=True, probe_roles=True,
+        unsafe,
+        tmp_path,
+        repeats=1,
+        scenarios=(SCENARIOS[4],),
+        role_only=True,
+        probe_roles=True,
     )
     assert report["investigator_confusion"] == {"thermal_load": {"stable": 1}}
     assert secret not in json.dumps(report)
