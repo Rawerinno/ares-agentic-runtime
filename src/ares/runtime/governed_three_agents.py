@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from math import isfinite
 from typing import TYPE_CHECKING, cast
 
 from ares.evaluation.ollama_capability_boundary import Generate
@@ -75,7 +76,7 @@ class GovernedThreeAgentTeam:
                 "severity": severity,
                 "temperature_c": (
                     assessment.snapshot.temperature_c
-                    if assessment.snapshot.temperature_c == assessment.snapshot.temperature_c
+                    if isfinite(assessment.snapshot.temperature_c)
                     else None
                 ),
                 "healthy": healthy,
