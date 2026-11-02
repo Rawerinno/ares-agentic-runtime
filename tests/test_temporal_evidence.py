@@ -149,10 +149,7 @@ def test_risk_overlay_never_downgrades_cooling_or_spike_history() -> None:
     assert report["risk_counts"] == {"normal": 1, "warning": 2, "critical": 6}
     results = report["results"]
     assert isinstance(results, list)
-    per_case = {
-        str(row["scenario"]): row
-        for row in cast("list[dict[str, object]]", results)
-    }
+    per_case = {str(row["scenario"]): row for row in cast("list[dict[str, object]]", results)}
     assert per_case["single_hot"]["evidence_state"] == "insufficient_history"
     assert per_case["single_hot"]["risk_severity"] == "critical"
     assert per_case["single_hot"]["risk_action"] == "human_review"
