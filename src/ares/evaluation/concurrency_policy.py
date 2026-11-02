@@ -103,9 +103,7 @@ def choose_concurrency(
         return baseline
     signatures = [json.dumps(report, sort_keys=True) for report in reports]
     if len(set(signatures)) != len(signatures):
-        return SchedulingDecision(
-            1, False, "duplicate_trial", 0, min_trials, None, None
-        )
+        return SchedulingDecision(1, False, "duplicate_trial", 0, min_trials, None, None)
     parsed = [_read_sample(report, candidate) for report in reports]
     valid = [item for item in parsed if item is not None]
     if len(valid) != len(reports):
