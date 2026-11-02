@@ -157,6 +157,18 @@ class SqliteTaskStore:
                 (task_id,),
             )
 
+    def completed_reports(self, *, limit: int = 100) -> tuple[IncidentReport, ...]:
+        """Read a bounded stable list of completed task outputs without mutation."""
+        if not 1 <= limit <= 1000:
+            raise ValueError("limit must be between 1 and 1000")
+        with self._connection() as db:
+            rows = db.execute(
+                "SELECT report_json FROM tasks WHERE status = 'completed' "
+                "ORDER BY task_id LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return tuple(self._decode(str(payload)) for (payload,) in rows)
+
     def summary(self) -> dict[str, int]:
         with self._connection() as db:
             rows = db.execute("SELECT status, COUNT(*) FROM tasks GROUP BY status").fetchall()
