@@ -228,11 +228,17 @@ def test_prompts_are_role_specific_not_a_shared_confusing_menu(tmp_path: Path) -
         return reference_generate(prompt)
 
     report = run_incident(
-        supervisor, store, task_id="prompts", agent_id="observer", tool_id="sensor",
+        supervisor,
+        store,
+        task_id="prompts",
+        agent_id="observer",
+        tool_id="sensor",
         team=GovernedThreeAgentTeam(inspect),
     )
     assert [item.finding.startswith("Validated:") for item in report.handoffs[3:6]] == [
-        True, True, True
+        True,
+        True,
+        True,
     ]
     assert len(prompts) == 3
     assert "normal => monitor" not in prompts[0]
