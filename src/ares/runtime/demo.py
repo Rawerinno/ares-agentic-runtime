@@ -13,7 +13,7 @@ from ares.intelligence.local import LocalReferenceModel
 from ares.intelligence.ollama import OllamaAdapter
 from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import ProviderClient, RequestLimits
-from ares.runtime.governed_three_agents import GovernedThreeAgentTeam
+from ares.runtime.governed_three_agents import GovernedThreeAgentTeam, reference_generate
 from ares.runtime.multi_agent_mvp import SqliteTaskStore, run_incident
 from ares.safety import Capability, Policy
 from ares.simulation import DeviceSimulator
@@ -50,31 +50,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         )
     team: GovernedThreeAgentTeam | None = None
     if args.team == "offline":
-
-        def offline_team(question: str) -> str:
-            context = question.split("Trusted context: ", 1)[1].removesuffix(".")
-            data = json.loads(context)
-            severity = data["severity"]
-            role = question.split("ROLE=", 1)[1].split(".", 1)[0]
-            if role == "investigator":
-                hypothesis = (
-                    "sensor_fault"
-                    if not data["healthy"] or data["temperature_c"] is None
-                    else "stable"
-                    if severity == "normal"
-                    else "thermal_load"
-                )
-                return json.dumps({"hypothesis": hypothesis, "severity": severity})
-            if role == "planner":
-                action = {
-                    "normal": "monitor",
-                    "warning": "inspect",
-                    "critical": "human_review",
-                }[severity]
-                return json.dumps({"plan": action, "severity": severity})
-            return json.dumps({"verdict": "consistent", "severity": severity})
-
-        team = GovernedThreeAgentTeam(offline_team, identity="three-offline-v1")
+        team = GovernedThreeAgentTeam(reference_generate, identity="three-offline-v1")
     elif args.team == "ollama":
         team = GovernedThreeAgentTeam(
             ollama_generator(args.model), identity=f"three-ollama-v1:{args.model}"
