@@ -9,26 +9,61 @@ from ares.runtime.temporal_evidence import EvidenceReading, EvidenceState
 @pytest.mark.parametrize(
     ("values", "severity", "trend", "action"),
     [
-        ([20.0], RiskSeverity.NORMAL, EvidenceState.INSUFFICIENT_HISTORY,
-         ReviewAction.COLLECT_EVIDENCE),
-        ([85.0], RiskSeverity.CRITICAL, EvidenceState.INSUFFICIENT_HISTORY,
-         ReviewAction.HUMAN_REVIEW),
-        ([20.0, 24.0, 29.0], RiskSeverity.NORMAL, EvidenceState.RISING_TEMPERATURE,
-         ReviewAction.INSPECT),
-        ([60.0, 60.0, 60.0], RiskSeverity.WARNING, EvidenceState.NO_CONFIRMED_RISE,
-         ReviewAction.INSPECT),
-        ([85.0, 80.0, 75.0], RiskSeverity.CRITICAL, EvidenceState.NO_CONFIRMED_RISE,
-         ReviewAction.HUMAN_REVIEW),
-        ([50.0, 85.0, 51.0], RiskSeverity.CRITICAL, EvidenceState.NO_CONFIRMED_RISE,
-         ReviewAction.HUMAN_REVIEW),
-        ([20.0, 20.0, 20.0], RiskSeverity.NORMAL, EvidenceState.NO_CONFIRMED_RISE,
-         ReviewAction.MONITOR),
-        ([59.9, 59.9, 59.9], RiskSeverity.NORMAL, EvidenceState.NO_CONFIRMED_RISE,
-         ReviewAction.MONITOR),
-        ([60.0], RiskSeverity.WARNING, EvidenceState.INSUFFICIENT_HISTORY,
-         ReviewAction.INSPECT),
-        ([80.0], RiskSeverity.CRITICAL, EvidenceState.INSUFFICIENT_HISTORY,
-         ReviewAction.HUMAN_REVIEW),
+        (
+            [20.0],
+            RiskSeverity.NORMAL,
+            EvidenceState.INSUFFICIENT_HISTORY,
+            ReviewAction.COLLECT_EVIDENCE,
+        ),
+        (
+            [85.0],
+            RiskSeverity.CRITICAL,
+            EvidenceState.INSUFFICIENT_HISTORY,
+            ReviewAction.HUMAN_REVIEW,
+        ),
+        (
+            [20.0, 24.0, 29.0],
+            RiskSeverity.NORMAL,
+            EvidenceState.RISING_TEMPERATURE,
+            ReviewAction.INSPECT,
+        ),
+        (
+            [60.0, 60.0, 60.0],
+            RiskSeverity.WARNING,
+            EvidenceState.NO_CONFIRMED_RISE,
+            ReviewAction.INSPECT,
+        ),
+        (
+            [85.0, 80.0, 75.0],
+            RiskSeverity.CRITICAL,
+            EvidenceState.NO_CONFIRMED_RISE,
+            ReviewAction.HUMAN_REVIEW,
+        ),
+        (
+            [50.0, 85.0, 51.0],
+            RiskSeverity.CRITICAL,
+            EvidenceState.NO_CONFIRMED_RISE,
+            ReviewAction.HUMAN_REVIEW,
+        ),
+        (
+            [20.0, 20.0, 20.0],
+            RiskSeverity.NORMAL,
+            EvidenceState.NO_CONFIRMED_RISE,
+            ReviewAction.MONITOR,
+        ),
+        (
+            [59.9, 59.9, 59.9],
+            RiskSeverity.NORMAL,
+            EvidenceState.NO_CONFIRMED_RISE,
+            ReviewAction.MONITOR,
+        ),
+        ([60.0], RiskSeverity.WARNING, EvidenceState.INSUFFICIENT_HISTORY, ReviewAction.INSPECT),
+        (
+            [80.0],
+            RiskSeverity.CRITICAL,
+            EvidenceState.INSUFFICIENT_HISTORY,
+            ReviewAction.HUMAN_REVIEW,
+        ),
     ],
 )
 def test_risk_does_not_disappear_when_evidence_is_flat_or_cooling(
@@ -51,9 +86,7 @@ def test_risk_does_not_disappear_when_evidence_is_flat_or_cooling(
         (EvidenceReading(0, float("inf")),),
     ],
 )
-def test_invalid_telemetry_never_gets_ignored(
-    invalid: tuple[EvidenceReading, ...]
-) -> None:
+def test_invalid_telemetry_never_gets_ignored(invalid: tuple[EvidenceReading, ...]) -> None:
     report = reconcile(invalid)
     assert report.severity is RiskSeverity.CRITICAL
     assert report.next_action is ReviewAction.VALIDATE_SENSOR
