@@ -141,6 +141,8 @@ def run_suite(
                     "repeat": repeat + 1,
                     "verified": case_passed,
                     "pipeline_status": outcome.status,
+                    "model_mean": outcome.model_mean,
+                    "expected_mean": case.expected_mean,
                     "pipeline_errors": list(outcome.errors),
                     "expected_severity": case.expected_severity,
                     "actual_severity": outcome.severity,
