@@ -129,7 +129,12 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
     ):
         raise ValueError("stored risk action invalid")
     expected_by_role = (
-        {"validate_sensor", "collect_more_samples", "inspect_thermal_system", "continue_monitoring"},
+        {
+            "validate_sensor",
+            "collect_more_samples",
+            "inspect_thermal_system",
+            "continue_monitoring",
+        },
         {"monitor", "collect_evidence", "inspect", "validate_sensor", "human_review"},
         {"consistent", "inconsistent"},
     )
