@@ -69,7 +69,7 @@ def ollama_three_role_generator(
                 + ". Do not use Markdown or an answer wrapper. "
                 "The supplied telemetry is authoritative. "
                 + role_guidance
-                "No external tools or equipment commands are permitted.\n" + question
+                + "No external tools or equipment commands are permitted.\n" + question
             ),
             "stream": False,
             "think": False,
