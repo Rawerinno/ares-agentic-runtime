@@ -71,3 +71,27 @@ The new local acceptance test should use the command above after
 pulling the updated `main`. The benchmark records genuine model
 acceptance separately from deterministic safety; early failures still
 prevent downstream agents from running.
+
+## Rejection analysis after the second live benchmark
+
+On the second Llama 3.2:3B run, deterministic governance was 18/18 and
+idempotent replay was 18/18; investigator acceptance improved to
+10/18 (55.6%), planner acceptance was 0/10, and the critic never ran.
+The previous reporting system only captured `policy_mismatch`, so it
+was not possible to distinguish wrong severity from a wrong hypothesis,
+wrong plan, invalid fields, or malformed JSON.
+
+The next version uses **role-specific instructions** and preserves exact
+deterministic rules. Its rejection codes now distinguish
+`severity_mismatch`, `hypothesis_mismatch`, `plan_mismatch`,
+`verdict_mismatch`, `invalid_types`, `invalid_fields`,
+`invalid_shape`, `invalid_json`, and `oversized_response`.
+A `rejection_counts` section aggregates these codes by role. It never
+stores raw model responses, prompt content, or untrusted text. No
+hardware writes, policy relaxation, or automatic retries were added.
+
+A subsequent local run should use a **new output file**, for example
+`ares-three-agent-live-v3.json`, to preserve the second benchmark.
+Because the three calls remain fail-closed and sequential, later roles
+may still show zero attempts if earlier roles fail. This is an honest
+measurement limitation, not evidence that uninvoked roles are inaccurate.
