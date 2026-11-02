@@ -1,7 +1,8 @@
 """Privacy-minimized audit records for bounded read-only agent collaboration."""
 
-from ares.evaluation.audit import AuditEntry, append_entry
 from typing import TYPE_CHECKING
+
+from ares.evaluation.audit import AuditEntry, append_entry
 
 if TYPE_CHECKING:
     from ares.evaluation.bounded_team import BoundedTeamResult
@@ -10,8 +11,8 @@ if TYPE_CHECKING:
 
 def record_bounded_execution(
     entries: tuple[AuditEntry, ...],
-    report: "BoundedTeamResult",
-    scheduling: "SchedulingDecision",
+    report: BoundedTeamResult,
+    scheduling: SchedulingDecision,
     *,
     call_count: int,
     elapsed_ms: float,
