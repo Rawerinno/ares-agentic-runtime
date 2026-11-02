@@ -67,11 +67,11 @@ class ProposalEngine:
             raise DecisionError("Invalid model decision") from exc
         if decision.assessment_severity is not assessment.severity:
             raise DecisionError("Model may not alter observed severity")
-        if (
-            assessment.severity is Severity.CRITICAL
-            and decision.kind is not DecisionKind.REQUEST_REVIEW
-        ):
-            raise DecisionError("Critical telemetry requires human review")
-        if assessment.severity is Severity.WARNING and decision.kind is DecisionKind.OBSERVE:
-            raise DecisionError("Warning telemetry cannot be dismissed")
+        expected = {
+            Severity.NORMAL: DecisionKind.OBSERVE,
+            Severity.WARNING: DecisionKind.INVESTIGATE,
+            Severity.CRITICAL: DecisionKind.REQUEST_REVIEW,
+        }[assessment.severity]
+        if decision.kind is not expected:
+            raise DecisionError("Model recommendation contradicts deterministic policy")
         return decision
