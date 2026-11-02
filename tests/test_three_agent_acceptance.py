@@ -33,9 +33,7 @@ def test_invalid_investigator_fails_closed_and_skips_other_agents(tmp_path: Path
     def unsafe(_question: str) -> str:
         return '{"hypothesis":"stable","severity":"normal"}'
 
-    report = evaluate_three_roles(
-        unsafe, tmp_path, repeats=2, scenarios=(SCENARIOS[4],)
-    )
+    report = evaluate_three_roles(unsafe, tmp_path, repeats=2, scenarios=(SCENARIOS[4],))
     assert report["governed_correct"] == 2
     assert report["full_team_accepted"] == 0
     stats = report["role_metrics"]
@@ -51,9 +49,7 @@ def test_model_unavailable_still_preserves_governed_safety(tmp_path: Path) -> No
     def offline(_question: str) -> str:
         raise RuntimeError("private-provider-token")
 
-    report = evaluate_three_roles(
-        offline, tmp_path, repeats=1, scenarios=(SCENARIOS[7],)
-    )
+    report = evaluate_three_roles(offline, tmp_path, repeats=1, scenarios=(SCENARIOS[7],))
     assert report["governed_correct"] == 1
     assert report["full_team_accepted"] == 0
     stats = report["role_metrics"]
@@ -85,9 +81,7 @@ def test_duplicate_scenario_names_are_rejected(tmp_path: Path) -> None:
         evaluate_three_roles(reference_generate, tmp_path, scenarios=duplicates)
 
 
-def test_cli_json_offline_has_correct_scope(
-    tmp_path: Path, capsys: CaptureFixture[str]
-) -> None:
+def test_cli_json_offline_has_correct_scope(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
     destination = tmp_path / "acceptance.json"
     assert run(["--repeats", "1", "--output", str(destination)]) == 0
     report = json.loads(destination.read_text(encoding="utf-8"))
