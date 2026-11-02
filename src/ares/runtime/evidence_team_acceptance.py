@@ -15,9 +15,7 @@ from ares.runtime.evidence_team import GovernedEvidenceTeam, evidence_team_refer
 from ares.runtime.evidence_team_ollama import ollama_evidence_team_generator
 
 
-def evaluate_team(
-    generate: Callable[[str], str], *, repeats: int = 1
-) -> dict[str, object]:
+def evaluate_team(generate: Callable[[str], str], *, repeats: int = 1) -> dict[str, object]:
     if not 1 <= repeats <= 5:
         raise ValueError("repeats must be 1..5")
     attempted = {"investigator": 0, "planner": 0, "critic": 0}
