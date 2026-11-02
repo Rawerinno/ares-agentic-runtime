@@ -7,6 +7,11 @@ from dataclasses import asdict
 from pathlib import Path
 
 from ares.integrations import ReadOnlyToolGateway
+from ares.intelligence.decisions import ModelAdapter
+from ares.intelligence.local import LocalReferenceModel
+from ares.intelligence.ollama import OllamaAdapter
+from ares.intelligence.ollama_transport import OllamaLocalTransport
+from ares.intelligence.transport import ProviderClient, RequestLimits
 from ares.runtime.multi_agent_mvp import SqliteTaskStore, run_incident
 from ares.safety import Capability, Policy
 from ares.simulation import DeviceSimulator
@@ -19,12 +24,25 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--task-id", default="demo-critical")
     parser.add_argument("--db", type=Path, default=Path(".ares-incident-tasks.sqlite3"))
     parser.add_argument("--recover", action="store_true")
+    parser.add_argument("--advisor", choices=("none", "offline", "ollama"), default="none")
+    parser.add_argument("--model", default="llama3.2:3b")
     args = parser.parse_args(argv)
 
     device = DeviceSimulator("demo-sim", initial_temperature_c=args.temperature)
     gateway = ReadOnlyToolGateway(Policy(frozenset({("observer", "sensor", Capability.READ)})))
     gateway.register_sensor("sensor", device)
     store = SqliteTaskStore(args.db)
+    advisor: ModelAdapter | None = None
+    if args.advisor == "offline":
+        advisor = LocalReferenceModel()
+    elif args.advisor == "ollama":
+        advisor = OllamaAdapter(
+            ProviderClient(
+                OllamaLocalTransport(),
+                RequestLimits(timeout_seconds=30.0, max_response_bytes=16384),
+            ),
+            args.model,
+        )
     report = run_incident(
         Supervisor(gateway),
         store,
@@ -32,13 +50,15 @@ def run(argv: Sequence[str] | None = None) -> int:
         agent_id="observer",
         tool_id="sensor",
         recover=args.recover,
+        advisor=advisor,
     )
     print(
         json.dumps(
             {
                 "report": asdict(report),
                 "tasks": store.summary(),
-                "execution_scope": "offline_deterministic_simulation",
+                "execution_scope": "local_simulation_advisory_only",
+                "advisor": args.advisor,
             },
             indent=2,
         )
