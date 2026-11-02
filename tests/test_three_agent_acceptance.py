@@ -43,9 +43,7 @@ def test_invalid_investigator_fails_closed_and_skips_other_agents(tmp_path: Path
     assert stats["investigator"]["accepted"] == 0
     assert stats["planner"]["attempted"] == 0
     assert stats["critic"]["attempted"] == 0
-    assert report["rejection_counts"]["investigator"] == {
-        "policy_mismatch:severity_mismatch": 2
-    }
+    assert report["rejection_counts"]["investigator"] == {"policy_mismatch:severity_mismatch": 2}
     assert report["idempotent_replays"] == 2
 
 
