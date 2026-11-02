@@ -23,6 +23,27 @@ They execute sequentially by default. Concurrency for independent extraction
 can only be enabled through a deliberately conservative benchmark-evidence gate.
 Safety classification never depends on the model's classification.
 
+### Durable incident workflow (experimental MVP)
+
+The repository now includes a read-only simulated incident workflow that
+coordinates four explicit roles: observer, diagnostician, planner and
+deterministic safety reviewer. It persists task status and completed
+reports locally with SQLite, supports idempotent replay and bounded
+explicit recovery, and can optionally attach a strictly validated
+proposal-only Ollama advisor. These are role handoffs in one process,
+not independently deployed autonomous agents.
+
+```powershell
+uv run python -m ares.runtime.demo --task-id mvp-demo-001 --temperature 85
+uv run python -m ares.runtime.dashboard
+uv run python -m ares.runtime.mvp_evaluation --scenarios 60
+```
+
+The dashboard is a static HTML file; it is not an HTTP service. The
+evaluation exercises simulated reference-model cases, failure recovery,
+permission denials, and replay — not actual Ollama capability.
+See [`docs/multi-agent-mvp.md`](docs/multi-agent-mvp.md).
+
 ### Why the scope is deliberately small
 
 The local Llama 3.2:3B model returned 9/9 correct extraction and 9/9
