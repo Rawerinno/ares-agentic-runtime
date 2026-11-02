@@ -156,7 +156,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     report = evaluate_team(readings, timed_generate, parallelism=decision.parallelism)
     wall_time_ms = (monotonic() - started) * 1000
     extraction_attempts = len(report.extracted)
-    extraction_successes = extraction_attempts - int("extractor_mismatch" in report.errors)
+    extraction_successes = sum(
+        _number(proposed) == _number(source.removesuffix(" C"))
+        for proposed, source in zip(report.extracted, readings, strict=True)
+    )
     arithmetic_attempts = int(report.model_mean is not None)
     arithmetic_successes = int(report.status == "verified")
     attempted = extraction_attempts + arithmetic_attempts
