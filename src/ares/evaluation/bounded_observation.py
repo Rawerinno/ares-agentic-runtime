@@ -8,13 +8,32 @@ import argparse
 import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from statistics import mean
 from time import monotonic
 
-from ares.evaluation.bounded_team import _number, _severity
 from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
+
+
+def _number(value: str) -> Decimal | None:
+    """Accept only finite bounded decimal values."""
+    if len(value) > 100:
+        return None
+    try:
+        parsed = Decimal(value.strip())
+    except InvalidOperation:
+        return None
+    return parsed if parsed.is_finite() and parsed.copy_abs() <= Decimal("1000000") else None
+
+
+def _severity(value: Decimal) -> str:
+    """Deterministic temperature category: model cannot override."""
+    if value >= Decimal("80"):
+        return "critical"
+    if value >= Decimal("60"):
+        return "warning"
+    return "normal"
 
 
 @dataclass(frozen=True, slots=True)
