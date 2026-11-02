@@ -13,9 +13,7 @@ from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import RequestLimits
 
 
-def ollama_three_role_generator(
-    model: str, *, timeout: float = 30.0
-) -> Callable[[str], str]:
+def ollama_three_role_generator(model: str, *, timeout: float = 30.0) -> Callable[[str], str]:
     """Create strictly local, bounded role-specific JSON generation."""
     if not model.strip() or len(model) > 120:
         raise ValueError("model must have 1..120 nonblank characters")
@@ -51,8 +49,7 @@ def ollama_three_role_generator(
                 "Return exactly one JSON object with the two required keys, "
                 f"{field} and severity. Do not use Markdown or an answer wrapper. "
                 "The supplied telemetry is authoritative. "
-                "No external tools or equipment commands are permitted.\n"
-                + question
+                "No external tools or equipment commands are permitted.\n" + question
             ),
             "stream": False,
             "think": False,
