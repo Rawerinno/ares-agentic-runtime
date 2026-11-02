@@ -13,10 +13,11 @@ from statistics import mean, median
 from tempfile import TemporaryDirectory
 from time import monotonic
 
-from ares.evaluation.ollama_capability_boundary import Generate, ollama_generator
+from ares.evaluation.ollama_capability_boundary import Generate
 from ares.integrations import ReadOnlyToolGateway
 from ares.runtime.governed_three_agents import GovernedThreeAgentTeam, reference_generate
 from ares.runtime.multi_agent_mvp import SqliteTaskStore, run_incident
+from ares.runtime.three_agent_ollama import ollama_three_role_generator
 from ares.safety import Capability, Policy
 from ares.simulation import DeviceSimulator
 from ares.supervisor import Supervisor
@@ -202,7 +203,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--repeats", type=int, default=2)
     parser.add_argument("--output", type=Path, default=Path("ares-three-agent-report.json"))
     args = parser.parse_args(argv)
-    generate = ollama_generator(args.model) if args.live else reference_generate
+    generate = ollama_three_role_generator(args.model) if args.live else reference_generate
     with TemporaryDirectory(prefix="ares-team-") as workdir:
         report = evaluate_three_roles(generate, Path(workdir), repeats=args.repeats)
     report["model_source"] = "live_ollama" if args.live else "offline_reference"
