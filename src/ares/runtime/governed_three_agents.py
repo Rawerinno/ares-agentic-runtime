@@ -26,6 +26,23 @@ class TeamOutcome:
     error_code: str | None
 
 
+def _mismatch_reason(actual: object, expected: dict[str, str]) -> str:
+    """Return only a fixed diagnostic code, never raw model-generated text."""
+    if not isinstance(actual, dict):
+        return "invalid_shape"
+    fields = cast("dict[object, object]", actual)
+    if set(fields) != set(expected):
+        return "invalid_fields"
+    if any(type(value) is not str for value in fields.values()):
+        return "invalid_types"
+    if fields["severity"] != expected["severity"]:
+        return "severity_mismatch"
+    role_field = next(field for field in expected if field != "severity")
+    if fields[role_field] != expected[role_field]:
+        return f"{role_field}_mismatch"
+    return "none"
+
+
 class GovernedThreeAgentTeam:
     """Investigator, planner, critic; each provides bounded advisory enums."""
 
@@ -69,6 +86,26 @@ class GovernedThreeAgentTeam:
                 "Independently check prior agent outputs against trusted severity",
             ),
         )
+        rules = {
+            "investigator": (
+                "For healthy finite telemetry: normal severity => stable; "
+                "warning or critical severity => thermal_load. "
+                "Unhealthy or missing/non-finite sensor => sensor_fault. "
+                "Output exactly hypothesis and severity."
+            ),
+            "planner": (
+                "Map authoritative severity to advisory plan: "
+                "normal => monitor; warning => inspect; critical => human_review. "
+                "Do not substitute request_review, investigate, or other words. "
+                "Output exactly plan and severity."
+            ),
+            "critic": (
+                "Prior roles shown here have already been validated by ARES. "
+                "Return verdict=consistent when they agree with authoritative severity. "
+                "Return verdict=inconsistent only for a genuine contradiction. "
+                "Output exactly verdict and severity."
+            ),
+        }
         handoffs: list[RoleHandoff] = []
         calls = 0
         for role, expected, instruction in descriptions:
@@ -85,13 +122,10 @@ class GovernedThreeAgentTeam:
                 ],
             }
             question = (
-                f"ROLE={role}. {instruction}. You have NO tool permissions. "
-                "Severity is fixed by Python. Allowed investigator hypotheses: "
-                "stable, thermal_load, sensor_fault. Allowed planner plans: "
-                "monitor, inspect, human_review. Allowed critic verdicts: "
-                "consistent, inconsistent. Use exactly your role-specific key "
-                "and the severity key, with no extra keys. "
-                "Your answer must be a JSON object string, not prose. "
+                f"ROLE={role}. {instruction}. {rules[role]} "
+                "You have NO tool permissions and must not change severity. "
+                "Respond with exactly one JSON object containing the two "
+                "role-specific string fields, not Markdown or prose. "
                 f"Trusted context: {json.dumps(trusted, allow_nan=False)}."
             )
             calls += 1
@@ -102,18 +136,22 @@ class GovernedThreeAgentTeam:
                     RoleHandoff(role, "Rejected: model_exception", "Deterministic fallback")
                 )
                 return TeamOutcome("rejected", tuple(handoffs), calls, "model_exception")
+            reason = "invalid_json"
             try:
                 if len(answer) > 256:
-                    raise ValueError("oversized response")
-                parsed: object = json.loads(answer)
-                if not isinstance(parsed, dict):
-                    raise ValueError("invalid response")
-                actual = cast("dict[str, object]", parsed)
-                if actual != expected or any(type(value) is not str for value in actual.values()):
-                    raise ValueError("policy mismatch")
+                    reason = "oversized_response"
+                else:
+                    parsed: object = json.loads(answer)
+                    reason = _mismatch_reason(parsed, expected)
             except (ValueError, TypeError):
+                reason = "invalid_json"
+            if reason != "none":
                 handoffs.append(
-                    RoleHandoff(role, "Rejected: policy_mismatch", "Deterministic fallback")
+                    RoleHandoff(
+                        role,
+                        f"Rejected: policy_mismatch:{reason}",
+                        "Deterministic fallback",
+                    )
                 )
                 return TeamOutcome("rejected", tuple(handoffs), calls, "policy_mismatch")
             handoffs.append(
