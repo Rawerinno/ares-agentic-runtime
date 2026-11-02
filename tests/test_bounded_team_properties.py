@@ -50,8 +50,8 @@ def test_many_simple_deterministic_cases() -> None:
             else "normal"
         )
 
-        def model(_question: str) -> str:
-            return str(temperature)
+        def model(_question: str, value: int = temperature) -> str:
+            return str(value)
 
         result = evaluate_team((f"{temperature} C",) * 3, model)
         assert result.status == "verified"
