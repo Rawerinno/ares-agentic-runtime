@@ -132,10 +132,7 @@ def test_confusion_redacts_untrusted_output() -> None:
 
     report = evaluate_evidence(injected)
     assert report["model_accepted"] == 2
-    assert all(
-        row["bounded_proposal"] == "validate_sensor"
-        for row in report["results"]
-    )
+    assert all(row["bounded_proposal"] == "validate_sensor" for row in report["results"])
     assert secret not in json.dumps(report)
     assert bounded_followup("not json " + secret) == "unrecognized"
     assert bounded_followup('{"followup":"unauthorized_operation"}') == "unrecognized"
