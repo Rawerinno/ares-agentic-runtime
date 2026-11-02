@@ -50,10 +50,14 @@ def run(argv: Sequence[str] | None = None) -> int:
         )
     team: GovernedThreeAgentTeam | None = None
     if args.team == "offline":
-        team = GovernedThreeAgentTeam(reference_generate, identity="three-offline-v1")
+        team = GovernedThreeAgentTeam(
+            reference_generate, identity="three-offline-v2", role_only=True
+        )
     elif args.team == "ollama":
         team = GovernedThreeAgentTeam(
-            ollama_three_role_generator(args.model), identity=f"three-ollama-v2:{args.model}"
+            ollama_three_role_generator(args.model, role_only=True),
+            identity=f"three-ollama-v3:{args.model}",
+            role_only=True,
         )
     report = run_incident(
         Supervisor(gateway),
