@@ -1,6 +1,7 @@
 """Three-role evidence review checks faulty peers without granting execution authority."""
 
 import json
+from typing import cast
 
 import pytest
 
@@ -120,3 +121,42 @@ def test_untrusted_critic_cannot_override_governor() -> None:
     assert result.authorized_action == "human_review"
     assert not result.team_accepted
     assert result.roles[-1].diagnostic == "policy_mismatch"
+
+
+def test_critic_receives_no_governor_acceptance_flags_or_expected_answers() -> None:
+    captured: list[str] = []
+
+    def inspect(prompt: str) -> str:
+        if "ROLE=critic." in prompt:
+            captured.append(prompt)
+        return evidence_team_reference_generate(prompt)
+
+    outcome = GovernedEvidenceTeam(inspect).evaluate(trace(60, 60, 60))
+    assert outcome.team_accepted
+    assert len(captured) == 1
+    context: object = json.loads(captured[0].split("Context: ", 1)[1])
+    assert isinstance(context, dict)
+    prior = cast("dict[str, object]", context)["prior_proposals"]
+    assert isinstance(prior, list)
+    items = cast("list[dict[str, str]]", prior)
+    assert len(items) == 2
+    assert all(set(item) == {"role", "proposed"} for item in items)
+    assert "accepted" not in captured[0]
+    assert "policy_mismatch" not in captured[0]
+
+
+def test_blind_critic_detects_wrong_peer_without_explicit_failure_labels() -> None:
+    prompts: list[str] = []
+
+    def mislead(prompt: str) -> str:
+        if "ROLE=planner." in prompt:
+            return '{"action":"monitor"}'
+        if "ROLE=critic." in prompt:
+            prompts.append(prompt)
+        return evidence_team_reference_generate(prompt)
+
+    outcome = GovernedEvidenceTeam(mislead).evaluate(trace(85))
+    assert not outcome.team_accepted
+    assert outcome.roles[2].proposed == "inconsistent"
+    assert outcome.roles[2].accepted
+    assert "policy_mismatch" not in prompts[0]

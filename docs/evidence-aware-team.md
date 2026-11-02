@@ -37,3 +37,7 @@ synthetic; their limits are not validated for physical installations.
 This path does not replace the existing persistent SQLite workflow,
 does not issue tool calls to models, and has no authenticated control
 or operator approval system.
+
+## Blind independent critic review
+
+A critic that can read the governor's `accepted` or `policy_mismatch` verdicts is only parroting the answer key. The reviewer context therefore contains only the two allowlisted prior proposals plus the trusted risk/evidence state, not earlier validation outcomes or expected labels. The reference critic independently recomputes policy agreement from trusted context. Test fixtures assert that accepted/rejected annotations are not leaked into critic prompts. Model performance must still be established empirically; no live-model success is claimed for this change.
