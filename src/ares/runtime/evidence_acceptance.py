@@ -78,7 +78,9 @@ def evaluate_evidence(
     for case in CASES:
         for iteration in range(repeats):
             evidence = analyze_evidence(case.readings)
-            correct = evidence.state.value == case.expected and evidence.device_actions == "disabled"
+            correct = (
+                evidence.state.value == case.expected and evidence.device_actions == "disabled"
+            )
             evidence_correct += int(correct)
             try:
                 answer = generator(evidence)
