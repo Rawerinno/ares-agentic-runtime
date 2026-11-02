@@ -219,7 +219,10 @@ def test_recomputed_checksum_does_not_bypass_policy_schema(
 
     store = DurableEvidenceStore(tmp_path / "audit.sqlite")
     run_durable_evidence_team(
-        store, evidence_team_reference_generate, trace(85), task_id="case",
+        store,
+        evidence_team_reference_generate,
+        trace(85),
+        task_id="case",
         identity="model-1",
     )
     with sqlite3.connect(store.path) as db:
@@ -242,7 +245,10 @@ def test_recomputed_checksum_cannot_forge_role_acceptance(tmp_path: Path) -> Non
 
     store = DurableEvidenceStore(tmp_path / "audit.sqlite")
     run_durable_evidence_team(
-        store, evidence_team_reference_generate, trace(85), task_id="case",
+        store,
+        evidence_team_reference_generate,
+        trace(85),
+        task_id="case",
         identity="model-1",
     )
     with sqlite3.connect(store.path) as db:
