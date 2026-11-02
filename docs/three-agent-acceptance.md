@@ -95,3 +95,43 @@ A subsequent local run should use a **new output file**, for example
 Because the three calls remain fail-closed and sequential, later roles
 may still show zero attempts if earlier roles fail. This is an honest
 measurement limitation, not evidence that uninvoked roles are inaccurate.
+
+## V4 evaluation: roles own proposals, ARES owns severity
+
+The third local benchmark achieved 8/18 full-team acceptances (44.4%),
+18/18 safe deterministic outcomes, 18/18 idempotent replays, and
+8/8 accepted responses each from the planner and critic **conditional
+on being invoked**. The investigator rejected ten outputs:
+seven severity mismatches and three hypothesis mismatches.
+
+The live CLI now defaults to a **role-only JSON contract**: an agent
+outputs exactly one bounded value (`hypothesis`, `plan`, or `verdict`).
+Severity remains in trusted, read-only context and is NEVER accepted
+from the model. The deterministic supervisor still checks every
+proposed value and controls the outcome. The redundant requirement
+for models to echo the authoritative severity has been removed from
+their output schema. The old two-field contract is still available
+for benchmarking with `--role-contract legacy`; it is not a safety
+authority.
+
+For a consolidated investigation on local Ollama:
+
+```powershell
+uv run python -m ares.runtime.three_agent_acceptance --live --model llama3.2:3b --repeats 2 --probe-roles --output ares-three-agent-live-v4.json
+```
+
+The `--probe-roles` mode is **diagnostic only**. Beyond the normal
+fail-closed sequential team run, it separately calls each target
+model role once per scenario, substituting a deterministic reference
+generator for the other roles to provide validated peer context.
+This prevents a weak investigator from hiding planner/critic
+competence. The report separates `role_metrics` (real collaboration)
+from `isolated_role_metrics` (independent role probes). Each isolated
+probe is still validation-only, with no device control, but success
+in isolation is not evidence of reliable autonomous collaboration.
+
+Each repetition may issue up to three sequential team model calls
+plus three isolated model calls. With nine scenarios and two repeats,
+the maximum is 108 local model calls (often fewer if the sequential
+team rejects early). Choose `--repeats 1` for a smaller initial
+sample. This is not a benchmark of general model intelligence.
