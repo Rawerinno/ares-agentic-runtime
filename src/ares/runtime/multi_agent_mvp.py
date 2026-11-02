@@ -100,8 +100,8 @@ class SqliteTaskStore:
         with self._connection() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
-                "SELECT request_hash, status, report_json, attempts "
-                "FROM tasks WHERE task_id = ?", (task_id,)
+                "SELECT request_hash, status, report_json, attempts FROM tasks WHERE task_id = ?",
+                (task_id,),
             ).fetchone()
             if row is not None:
                 existing_hash, status, stored, attempts = row
@@ -142,8 +142,8 @@ class SqliteTaskStore:
     def mark_failed(self, task_id: str) -> None:
         with self._connection() as db:
             db.execute(
-                "UPDATE tasks SET status = 'failed' "
-                "WHERE task_id = ? AND status = 'running'", (task_id,)
+                "UPDATE tasks SET status = 'failed' WHERE task_id = ? AND status = 'running'",
+                (task_id,),
             )
 
     def summary(self) -> dict[str, int]:
@@ -155,12 +155,14 @@ class SqliteTaskStore:
 def _diagnose(assessment: Assessment) -> RoleHandoff:
     if assessment.severity is Severity.CRITICAL:
         return RoleHandoff(
-            "diagnostician", "Critical thermal threshold reached",
+            "diagnostician",
+            "Critical thermal threshold reached",
             "Investigate thermal load and sensor validity immediately",
         )
     if assessment.severity is Severity.WARNING:
         return RoleHandoff(
-            "diagnostician", "Temperature above warning threshold",
+            "diagnostician",
+            "Temperature above warning threshold",
             "Review thermal trends and cooling capacity",
         )
     return RoleHandoff("diagnostician", "No threshold breach", "Continue observation")
@@ -169,7 +171,8 @@ def _diagnose(assessment: Assessment) -> RoleHandoff:
 def _plan(assessment: Assessment) -> RoleHandoff:
     if assessment.severity is Severity.CRITICAL:
         return RoleHandoff(
-            "planner", "Human approval required for any corrective operation",
+            "planner",
+            "Human approval required for any corrective operation",
             "Escalate to engineer; do not actuate",
         )
     if assessment.severity is Severity.WARNING:
@@ -181,7 +184,8 @@ def _review(assessment: Assessment, plan: RoleHandoff) -> RoleHandoff:
     if assessment.severity is Severity.CRITICAL and "do not actuate" not in plan.recommendation:
         raise ValueError("critical incident cannot bypass human review")
     return RoleHandoff(
-        "reviewer", "Deterministic safety review passed",
+        "reviewer",
+        "Deterministic safety review passed",
         "No device operation authorized",
     )
 
@@ -202,9 +206,7 @@ def run_incident(
     try:
         assessment = supervisor.assess(agent_id=agent_id, tool_id=tool_id)
         handoffs = (
-            RoleHandoff(
-                "observer", assessment.reason, assessment.recommendation
-            ),
+            RoleHandoff("observer", assessment.reason, assessment.recommendation),
             _diagnose(assessment),
             _plan(assessment),
         )
