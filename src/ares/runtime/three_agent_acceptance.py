@@ -89,9 +89,7 @@ def evaluate_three_roles(
     governed_correct = 0
     full_team_pass = 0
     replay_ok = 0
-    rejection_counts: dict[str, dict[str, int]] = {
-        role: {} for role in role_names
-    }
+    rejection_counts: dict[str, dict[str, int]] = {role: {} for role in role_names}
     started = monotonic()
     for case in scenarios:
         for repetition in range(repeats):
