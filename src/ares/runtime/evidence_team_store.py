@@ -61,8 +61,13 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         raise ValueError("stored evidence report malformed")
     data = cast("dict[str, object]", raw)
     allowed = {
-        "severity", "evidence_state", "authorized_action", "roles",
-        "team_accepted", "device_actions", "safety_authority",
+        "severity",
+        "evidence_state",
+        "authorized_action",
+        "roles",
+        "team_accepted",
+        "device_actions",
+        "safety_authority",
     }
     if set(data) != allowed:
         raise ValueError("stored evidence report fields malformed")
@@ -91,10 +96,16 @@ def _decode_report(encoded: str, digest: str) -> EvidenceTeamResult:
         )
     if [role.role for role in entries] != ["investigator", "planner", "critic"]:
         raise ValueError("stored role order malformed")
-    if any(type(data[k]) is not str for k in (
-        "severity", "evidence_state", "authorized_action", "device_actions",
-        "safety_authority",
-    )):
+    if any(
+        type(data[k]) is not str
+        for k in (
+            "severity",
+            "evidence_state",
+            "authorized_action",
+            "device_actions",
+            "safety_authority",
+        )
+    ):
         raise ValueError("stored evidence header malformed")
     if (
         data["device_actions"] != "disabled"
@@ -153,8 +164,7 @@ class DurableEvidenceStore:
                 if attempts >= 3:
                     raise EvidenceTaskConflict("evidence task recovery budget exhausted")
                 db.execute(
-                    "UPDATE evidence_tasks SET status = 'running', attempts = ? "
-                    "WHERE task_id = ?",
+                    "UPDATE evidence_tasks SET status = 'running', attempts = ? WHERE task_id = ?",
                     (attempts + 1, task_id),
                 )
             else:
