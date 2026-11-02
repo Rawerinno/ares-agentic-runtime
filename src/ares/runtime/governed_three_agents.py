@@ -124,3 +124,35 @@ class GovernedThreeAgentTeam:
                 )
             )
         return TeamOutcome("accepted", tuple(handoffs), calls, None)
+
+
+def reference_generate(question: str) -> str:
+    """Deterministic offline three-role baseline (not a language model)."""
+    role = question.split("ROLE=", 1)[1].split(".", 1)[0]
+    fragment = question.split("Trusted context: ", 1)[1].removesuffix(".")
+    raw: object = json.loads(fragment)
+    if not isinstance(raw, dict):
+        raise ValueError("invalid reference context")
+    context = cast("dict[str, object]", raw)
+    severity = context.get("severity")
+    if severity not in ("normal", "warning", "critical"):
+        raise ValueError("invalid reference severity")
+    if role == "investigator":
+        hypothesis = (
+            "sensor_fault"
+            if context.get("healthy") is not True or context.get("temperature_c") is None
+            else "stable"
+            if severity == "normal"
+            else "thermal_load"
+        )
+        return json.dumps({"hypothesis": hypothesis, "severity": severity})
+    if role == "planner":
+        plan = {
+            "normal": "monitor",
+            "warning": "inspect",
+            "critical": "human_review",
+        }[cast("str", severity)]
+        return json.dumps({"plan": plan, "severity": severity})
+    if role == "critic":
+        return json.dumps({"verdict": "consistent", "severity": severity})
+    raise ValueError("unknown reference role")
