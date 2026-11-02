@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 
-from ares.evaluation.ollama_capability_boundary import ollama_generator
 from ares.integrations import ReadOnlyToolGateway
 from ares.intelligence.decisions import ModelAdapter
 from ares.intelligence.local import LocalReferenceModel
@@ -15,6 +14,7 @@ from ares.intelligence.ollama_transport import OllamaLocalTransport
 from ares.intelligence.transport import ProviderClient, RequestLimits
 from ares.runtime.governed_three_agents import GovernedThreeAgentTeam, reference_generate
 from ares.runtime.multi_agent_mvp import SqliteTaskStore, run_incident
+from ares.runtime.three_agent_ollama import ollama_three_role_generator
 from ares.safety import Capability, Policy
 from ares.simulation import DeviceSimulator
 from ares.supervisor import Supervisor
@@ -53,7 +53,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         team = GovernedThreeAgentTeam(reference_generate, identity="three-offline-v1")
     elif args.team == "ollama":
         team = GovernedThreeAgentTeam(
-            ollama_generator(args.model), identity=f"three-ollama-v1:{args.model}"
+            ollama_three_role_generator(args.model), identity=f"three-ollama-v2:{args.model}"
         )
     report = run_incident(
         Supervisor(gateway),

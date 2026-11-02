@@ -165,7 +165,7 @@ def test_cli_runs_three_offline_roles_without_ollama(
     def forbidden(_model: str) -> object:
         raise AssertionError("Ollama must not be invoked")
 
-    monkeypatch.setattr(demo, "ollama_generator", forbidden)
+    monkeypatch.setattr(demo, "ollama_three_role_generator", forbidden)
     assert (
         demo.run(
             [

@@ -47,3 +47,27 @@ hidden by deterministic fallbacks. A 100% safety score on these fixed
 simulator cases is not evidence of real-device safety, robust language
 generalization, or independent agent autonomy. No external tools or
 device writes are available to the models.
+
+## Why the first live run stopped at the investigator
+
+The first real local Llama test completed 18/18 deterministically governed
+scenarios and 18/18 idempotent replays, but the investigator received
+18 `policy_mismatch` rejections and the planner and critic were not
+invoked. Transport errors were zero. The first report did **not**
+record the raw answer, so the precise cause cannot be established from
+that run alone.
+
+Previously the generic capability-benchmark adapter requested an Ollama
+JSON envelope with an `answer` **string**. The first agent was then
+asked to put a second JSON object *inside that string*. This is a likely
+source of failures on small local models.
+
+The dedicated adapter now requests the role-specific JSON **object
+directly** via Ollama structured `format` schemas. The governor still
+enforces the authoritative field values and rejects incorrect, extra,
+or malformed fields. No safety policy is relaxed to improve model scores.
+
+The new local acceptance test should use the command above after
+pulling the updated `main`. The benchmark records genuine model
+acceptance separately from deterministic safety; early failures still
+prevent downstream agents from running.
