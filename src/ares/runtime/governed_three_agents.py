@@ -42,7 +42,7 @@ class GovernedThreeAgentTeam:
         healthy = assessment.snapshot.healthy
         hypothesis = (
             "sensor_fault"
-            if not healthy
+            if not healthy or not isfinite(assessment.snapshot.temperature_c)
             else "stable"
             if assessment.severity is Severity.NORMAL
             else "thermal_load"
