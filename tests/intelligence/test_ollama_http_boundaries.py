@@ -50,7 +50,7 @@ class Handler(BaseHTTPRequestHandler):
     [
         ("normal", None),
         ("redirect", "ollama_connection_failed"),
-        ("oversize", "provider_response_too_large"),
+        ("oversize", "provider_response_too_large|ollama_connection_failed"),
         ("http_error", "ollama_connection_failed"),
         ("partial", None),
     ],
@@ -72,6 +72,8 @@ def test_local_http_fail_closed(scenario: str, expected: str | None) -> None:
                 b"partial" if scenario == "partial" else b"ok"
             )
         else:
+            # Windows can abort an oversized response before it is fully read.
+            # Both outcomes are fail-closed; neither returns untrusted bytes.
             with pytest.raises(ProviderTransportError, match=expected):
                 transport.request(b"{}", limits=RequestLimits(max_response_bytes=64))
     finally:
