@@ -71,3 +71,21 @@ The added `model_advisor` is an advisory role in one Python process.
 This is not yet a persistent process-per-agent or distributed multi-LLM
 orchestrator. The real Ollama advisory path remains to be tested in
 the user's eventual consolidated local acceptance session.
+
+## Read-only operations view
+
+After running one or more simulated incident tasks, export a local HTML report:
+
+```powershell
+uv run python -m ares.runtime.dashboard --db .ares-incident-tasks.sqlite3 --output ares-operations.html
+```
+
+Open `ares-operations.html` in a browser. It displays total completed,
+normal/warning/critical breakdown, running/failed task counts, individual
+incidents, and expandable deterministic/model advisory handoffs.
+
+This is a **static, local-only, read-only export**. No HTTP listener,
+JavaScript, external resources, sensitive credentials or physical device
+controls are provided. All stored text is HTML-escaped and the document
+uses a restrictive Content Security Policy. It is not an authenticated
+operations service and does not auto-refresh.
