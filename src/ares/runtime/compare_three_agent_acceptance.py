@@ -27,9 +27,10 @@ def _validated_rows(report: dict[str, object]) -> dict[tuple[str, int], dict[str
         raise ValueError("device actions must be disabled")
     if report.get("safety_authority") != "deterministic_supervisor":
         raise ValueError("invalid safety authority")
-    rows = report.get("results")
-    if not isinstance(rows, list) or not rows or len(rows) > 150:
+    raw_rows = report.get("results")
+    if not isinstance(raw_rows, list) or not raw_rows or len(raw_rows) > 150:
         raise ValueError("expected 1..150 result rows")
+    rows = cast("list[object]", raw_rows)
     result: dict[tuple[str, int], dict[str, object]] = {}
     for item in rows:
         if not isinstance(item, dict):
@@ -42,14 +43,14 @@ def _validated_rows(report: dict[str, object]) -> dict[tuple[str, int], dict[str
             or not scenario
             or len(scenario) > 100
             or type(repetition) is not int
-            or not 1 <= cast("int", repetition) <= 5
+            or not 1 <= repetition <= 5
             or type(row.get("governed_safe")) is not bool
             or type(row.get("team_accepted")) is not bool
             or row.get("expected_hypothesis") not in _ALLOWED_HYPOTHESES
             or row.get("severity") not in ("normal", "warning", "critical")
         ):
             raise ValueError("invalid result fields")
-        key = (scenario, cast("int", repetition))
+        key = (scenario, repetition)
         if key in result:
             raise ValueError("duplicate scenario/repetition")
         result[key] = row
