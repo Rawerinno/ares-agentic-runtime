@@ -89,8 +89,8 @@ def compare_reports(
         ):
             raise ValueError("scenario definitions differ")
     keys = sorted(before)
-    gained = [f"{s}#{i}" for s, i in keys if not before[s, i]["team_accepted"] and after[s, i]["team_accepted"]]
-    lost = [f"{s}#{i}" for s, i in keys if before[s, i]["team_accepted"] and not after[s, i]["team_accepted"]]
+    gained = [\n        f"{s}#{i}"\n        for s, i in keys\n        if not before[s, i]["team_accepted"] and after[s, i]["team_accepted"]\n    ]
+    lost = [\n        f"{s}#{i}"\n        for s, i in keys\n        if before[s, i]["team_accepted"] and not after[s, i]["team_accepted"]\n    ]
     before_accepted = sum(before[key]["team_accepted"] is True for key in keys)
     after_accepted = sum(after[key]["team_accepted"] is True for key in keys)
     before_safe = sum(before[key]["governed_safe"] is True for key in keys)
