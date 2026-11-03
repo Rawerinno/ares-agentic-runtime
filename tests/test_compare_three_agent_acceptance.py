@@ -10,7 +10,9 @@ from pytest import CaptureFixture
 from ares.runtime.compare_three_agent_acceptance import compare_reports, run
 
 
-def report(\n    accepted: tuple[bool, bool], safe: tuple[bool, bool] = (True, True)\n) -> dict[str, object]:
+def report(
+    accepted: tuple[bool, bool], safe: tuple[bool, bool] = (True, True)
+) -> dict[str, object]:
     return {
         "scope": "governed_three_roles",
         "role_contract": "role_only",
