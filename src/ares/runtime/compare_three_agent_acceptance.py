@@ -89,8 +89,16 @@ def compare_reports(
         ):
             raise ValueError("scenario definitions differ")
     keys = sorted(before)
-    gained = [\n        f"{s}#{i}"\n        for s, i in keys\n        if not before[s, i]["team_accepted"] and after[s, i]["team_accepted"]\n    ]
-    lost = [\n        f"{s}#{i}"\n        for s, i in keys\n        if before[s, i]["team_accepted"] and not after[s, i]["team_accepted"]\n    ]
+    gained = [
+        f"{s}#{i}"
+        for s, i in keys
+        if not before[s, i]["team_accepted"] and after[s, i]["team_accepted"]
+    ]
+    lost = [
+        f"{s}#{i}"
+        for s, i in keys
+        if before[s, i]["team_accepted"] and not after[s, i]["team_accepted"]
+    ]
     before_accepted = sum(before[key]["team_accepted"] is True for key in keys)
     after_accepted = sum(after[key]["team_accepted"] is True for key in keys)
     before_safe = sum(before[key]["governed_safe"] is True for key in keys)
@@ -135,10 +143,12 @@ def run(argv: Sequence[str] | None = None) -> int:
     try:
         result = compare_reports(_read_report(args.baseline), _read_report(args.candidate))
     except (OSError, ValueError, UnicodeError) as exc:
-        parser.exit(2, f"invalid comparison: {type(exc).__name__}\n")
+        parser.exit(2, f"invalid comparison: {type(exc).__name__}
+")
     serialized = json.dumps(result, indent=2, sort_keys=True)
     if args.output:
-        args.output.write_text(serialized + "\n", encoding="utf-8")
+        args.output.write_text(serialized + "
+", encoding="utf-8")
     print(serialized)
     return 1 if result["safety_regression"] or result["quality_regression"] else 0
 
