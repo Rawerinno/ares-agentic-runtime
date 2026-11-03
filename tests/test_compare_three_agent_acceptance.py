@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 from pytest import CaptureFixture
@@ -65,12 +66,13 @@ def test_equal_result_is_not_proof_of_reliability() -> None:
 def test_malformed_comparisons_fail_closed(mutation: str) -> None:
     baseline = report((True, False))
     candidate = report((True, False))
+    rows = cast("list[dict[str, object]]", candidate["results"])
     if mutation == "duplicate":
-        candidate["results"][1]["scenario"] = "normal_low"  # type: ignore[index]
+        rows[1]["scenario"] = "normal_low"
     elif mutation == "count":
         candidate["governed_correct"] = 99
     elif mutation == "scenario":
-        candidate["results"][0]["expected_hypothesis"] = "sensor_fault"  # type: ignore[index]
+        rows[0]["expected_hypothesis"] = "sensor_fault"
     elif mutation == "scope":
         candidate["scope"] = "other"
     else:
