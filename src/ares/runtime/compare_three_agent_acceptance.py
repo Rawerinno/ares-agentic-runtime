@@ -143,12 +143,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     try:
         result = compare_reports(_read_report(args.baseline), _read_report(args.candidate))
     except (OSError, ValueError, UnicodeError) as exc:
-        parser.exit(2, f"invalid comparison: {type(exc).__name__}
-")
+        parser.exit(2, f"invalid comparison: {type(exc).__name__}\n")
     serialized = json.dumps(result, indent=2, sort_keys=True)
     if args.output:
-        args.output.write_text(serialized + "
-", encoding="utf-8")
+        args.output.write_text(serialized + "\n", encoding="utf-8")
     print(serialized)
     return 1 if result["safety_regression"] or result["quality_regression"] else 0
 
