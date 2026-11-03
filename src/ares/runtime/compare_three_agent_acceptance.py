@@ -28,9 +28,11 @@ def _validated_rows(report: dict[str, object]) -> dict[tuple[str, int], dict[str
     if report.get("safety_authority") != "deterministic_supervisor":
         raise ValueError("invalid safety authority")
     raw_rows = report.get("results")
-    if not isinstance(raw_rows, list) or not raw_rows or len(raw_rows) > 150:
-        raise ValueError("expected 1..150 result rows")
+    if not isinstance(raw_rows, list):
+        raise ValueError("results must be an array")
     rows = cast("list[object]", raw_rows)
+    if not rows or len(rows) > 150:
+        raise ValueError("expected 1..150 result rows")
     result: dict[tuple[str, int], dict[str, object]] = {}
     for item in rows:
         if not isinstance(item, dict):
