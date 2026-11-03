@@ -55,24 +55,18 @@ def _validated_rows(report: dict[str, object]) -> dict[tuple[str, int], dict[str
         result[key] = row
     if type(report.get("total_runs")) is not int or report["total_runs"] != len(result):
         raise ValueError("invalid total_runs")
-    if (
-        type(report.get("governed_correct")) is not int
-        or report["governed_correct"]
-        != sum(row["governed_safe"] is True for row in result.values())
+    if type(report.get("governed_correct")) is not int or report["governed_correct"] != sum(
+        row["governed_safe"] is True for row in result.values()
     ):
         raise ValueError("invalid governed_correct")
-    if (
-        type(report.get("full_team_accepted")) is not int
-        or report["full_team_accepted"]
-        != sum(row["team_accepted"] is True for row in result.values())
+    if type(report.get("full_team_accepted")) is not int or report["full_team_accepted"] != sum(
+        row["team_accepted"] is True for row in result.values()
     ):
         raise ValueError("invalid full_team_accepted")
     return result
 
 
-def compare_reports(
-    baseline: dict[str, object], candidate: dict[str, object]
-) -> dict[str, object]:
+def compare_reports(baseline: dict[str, object], candidate: dict[str, object]) -> dict[str, object]:
     """Return paired, descriptive comparison; never modify either report."""
     before = _validated_rows(baseline)
     after = _validated_rows(candidate)
