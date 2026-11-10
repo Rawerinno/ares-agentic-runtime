@@ -55,7 +55,8 @@ def validate_report(value: object) -> tuple[str, ...]:
         "extreme_input_rejected",
     }
     if not isinstance(checks, dict) or any(
-        not isinstance(k, str) or type(v) is not bool for k, v in cast(Mapping[object, object], checks).items()
+        not isinstance(k, str) or type(v) is not bool
+        for k, v in cast(Mapping[object, object], checks).items()
     ):
         errors.append("checks_invalid")
     else:
