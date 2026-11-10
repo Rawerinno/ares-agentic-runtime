@@ -136,8 +136,15 @@ uv run --frozen ruff format --check .
 uv run --frozen pyright
 uv run --frozen pytest
 uv run --frozen python -m ares.evaluation.release_acceptance --output ares-release-acceptance.json
+uv run --frozen python -m ares.evaluation.verify_release_report ares-release-acceptance.json
 uv build
 ```
+
+The verifier exits nonzero if the persisted JSON is malformed, has duplicate
+keys, contains non-finite constants, or violates the required offline
+invariants. Keep the generated JSON alongside the candidate commit SHA and
+CI run URL as release evidence. This verifies report consistency, not the
+trustworthiness of the report producer.
 
 Inspect the JSON report before accepting a candidate. Require
 `scope == "offline_stub_only"`, `all_passed == true`,
