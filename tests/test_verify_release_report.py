@@ -51,7 +51,6 @@ def test_missing_and_failing_checks_rejected() -> None:
         assert validate_report(altered), change
 
 
-
 def test_extra_checks_rejected_even_when_true() -> None:
     altered = deepcopy(acceptance_report())
     checks = cast(dict[str, object], altered["checks"])
