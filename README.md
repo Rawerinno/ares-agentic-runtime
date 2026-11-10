@@ -124,6 +124,41 @@ uv run pytest
 uv build
 ```
 
+## Release candidate evidence (simulation-only)
+
+The offline acceptance gate runs on Ubuntu and Windows in CI. To reproduce it
+locally, use Python 3.13 and `uv` from a clean checkout of the candidate commit:
+
+```powershell
+uv sync --dev --frozen
+uv run --frozen ruff check .
+uv run --frozen ruff format --check .
+uv run --frozen pyright
+uv run --frozen pytest
+uv run --frozen python -m ares.evaluation.release_acceptance --output ares-release-acceptance.json
+uv build
+```
+
+Inspect the JSON report before accepting a candidate. Require
+`scope == "offline_stub_only"`, `all_passed == true`,
+`device_actions == "disabled"`, `default_parallelism == 1`, and
+`scenario_count == 121`. The report contains simulated model calls, not
+measured Ollama inference. The command exits nonzero on failed checks; a
+successful CI job is necessary but **not** proof of live-model reliability.
+
+For the optional local Ollama demonstration, run the two bounded-team examples
+above with `llama3.2:3b` and record the exact model version, command, exit
+status, outputs, and date. Treat all LLM suggestions as untrusted and advisory.
+Compare any proposed live-model change against a paired baseline using the
+existing acceptance comparator before considering integration. A worse live
+acceptance rate is a regression even if deterministic governance still passes.
+Do not infer hardware safety from simulated results.
+
+A candidate is **not ready** if any required CI check fails, if the offline
+acceptance report fails, if device actions become enabled, or if safety
+classification is delegated to a model. Document any missing local-model
+results explicitly as *not run*; do not substitute synthetic measurements.
+
 ## Architecture
 
 The initial system architecture is documented in [`docs/architecture.md`](docs/architecture.md). Significant technical decisions are recorded as ADRs under [`docs/decisions/`](docs/decisions/).
