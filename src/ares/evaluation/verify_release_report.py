@@ -51,7 +51,10 @@ def validate_report(value: object) -> tuple[str, ...]:
             errors.append("checks_failed")
         if report.get("total") != len(checks) or type(report.get("total")) is not int:
             errors.append("total_mismatch")
-        if report.get("passed") != sum(checks.values()) or type(report.get("passed")) is not int:
+        if (
+            report.get("passed") != sum(checks.values())
+            or type(report.get("passed")) is not int
+        ):
             errors.append("passed_mismatch")
         if report.get("all_passed") is not all(checks.values()):
             errors.append("all_passed_mismatch")
