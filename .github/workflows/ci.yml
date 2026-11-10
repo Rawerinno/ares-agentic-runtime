@@ -44,5 +44,8 @@ jobs:
       - name: Tests and coverage
         run: uv run --frozen pytest
 
+      - name: Offline release acceptance (simulated, no Ollama or devices)
+        run: uv run --frozen python -m ares.evaluation.release_acceptance
+
       - name: Build package
         run: uv build
