@@ -47,13 +47,21 @@ def validate_report(value: object) -> tuple[str, ...]:
     else:
         if not required.issubset(checks):
             errors.append("required_checks_missing")
-        if not all(checks.values()):
+        validated_checks: dict[str, bool] = {
+            key: value
+            for key, value in checks.items()
+            if isinstance(key, str) and isinstance(value, bool)
+        }
+        if not all(validated_checks.values()):
             errors.append("checks_failed")
-        if report.get("total") != len(checks) or type(report.get("total")) is not int:
+        if report.get("total") != len(validated_checks) or type(report.get("total")) is not int:
             errors.append("total_mismatch")
-        if report.get("passed") != sum(checks.values()) or type(report.get("passed")) is not int:
+        if (
+            report.get("passed") != sum(validated_checks.values())
+            or type(report.get("passed")) is not int
+        ):
             errors.append("passed_mismatch")
-        if report.get("all_passed") is not all(checks.values()):
+        if report.get("all_passed") is not all(validated_checks.values()):
             errors.append("all_passed_mismatch")
     limitations = report.get("limitations")
     if not isinstance(limitations, str) or not limitations.strip():
