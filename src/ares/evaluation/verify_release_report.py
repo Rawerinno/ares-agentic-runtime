@@ -7,13 +7,14 @@ the producer or the underlying simulated execution is trustworthy.
 import argparse
 import json
 from collections.abc import Mapping, Sequence
+from typing import cast
 from pathlib import Path
 
 
 def validate_report(value: object) -> tuple[str, ...]:
     if not isinstance(value, dict):
         return ("report_not_object",)
-    report: Mapping[str, object] = value
+    report = cast(Mapping[str, object], value)
     errors: list[str] = []
 
     def require(name: str, expected: object) -> None:
@@ -41,15 +42,16 @@ def validate_report(value: object) -> tuple[str, ...]:
         "extreme_input_rejected",
     }
     if not isinstance(checks, dict) or any(
-        not isinstance(k, str) or type(v) is not bool for k, v in checks.items()
+        not isinstance(k, str) or type(v) is not bool for k, v in cast(Mapping[object, object], checks).items()
     ):
         errors.append("checks_invalid")
     else:
-        if not required.issubset(checks):
+        typed_checks = cast(Mapping[object, object], checks)
+        if not required.issubset(typed_checks):
             errors.append("required_checks_missing")
         validated_checks: dict[str, bool] = {
             key: value
-            for key, value in checks.items()
+            for key, value in typed_checks.items()
             if isinstance(key, str) and isinstance(value, bool)
         }
         if not all(validated_checks.values()):
