@@ -1,6 +1,7 @@
 """Adversarial checks for the offline release report verifier."""
 
 from copy import deepcopy
+from typing import cast
 
 from ares.evaluation.release_acceptance import acceptance_report
 from ares.evaluation.verify_release_report import validate_report
@@ -38,8 +39,7 @@ def test_missing_and_failing_checks_rejected() -> None:
     original = acceptance_report()
     for change in ("missing", "failed", "non_boolean"):
         altered = deepcopy(original)
-        checks = altered["checks"]
-        assert isinstance(checks, dict)
+        checks = cast(dict[str, object], altered["checks"])
         if change == "missing":
             checks.pop("audit_chain")
         elif change == "failed":
