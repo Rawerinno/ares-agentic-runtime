@@ -61,8 +61,8 @@ def validate_report(value: object) -> tuple[str, ...]:
         errors.append("checks_invalid")
     else:
         typed_checks = cast(Mapping[object, object], checks)
-        if not required.issubset(typed_checks):
-            errors.append("required_checks_missing")
+        if set(typed_checks) != required:
+            errors.append("check_set_mismatch")
         validated_checks: dict[str, bool] = {
             key: value
             for key, value in typed_checks.items()
