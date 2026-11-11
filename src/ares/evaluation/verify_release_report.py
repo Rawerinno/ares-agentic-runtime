@@ -93,8 +93,12 @@ def validate_report(value: object) -> tuple[str, ...]:
         if report.get("all_passed") is not all(validated_checks.values()):
             errors.append("all_passed_mismatch")
     limitations = report.get("limitations")
-    if not isinstance(limitations, str) or not limitations.strip():
-        errors.append("limitations_missing")
+    expected_limitations = (
+        "These tests validate deterministic software invariants, not "
+        "Ollama generalization, live concurrency performance, or hardware safety."
+    )
+    if type(limitations) is not str or limitations != expected_limitations:
+        errors.append("limitations_invalid")
     return tuple(errors)
 
 

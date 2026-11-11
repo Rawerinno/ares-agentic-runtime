@@ -72,6 +72,14 @@ def test_missing_top_level_fields_rejected() -> None:
     assert "report_field_set_mismatch" in validate_report(altered)
 
 
+def test_altered_limitations_rejected() -> None:
+    original = acceptance_report()
+    for replacement in ("Safe for hardware deployment.", "All limitations resolved.", 42):
+        altered = deepcopy(original)
+        altered["limitations"] = replacement
+        assert "limitations_invalid" in validate_report(altered)
+
+
 def test_duplicate_json_keys_rejected(tmp_path: Path) -> None:
     report = tmp_path / "duplicate.json"
     report.write_text('{"scope":"offline_stub_only","scope":"live_ollama"}', encoding="utf-8")
