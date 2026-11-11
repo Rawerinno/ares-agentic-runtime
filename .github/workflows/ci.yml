@@ -53,10 +53,17 @@ jobs:
       - name: Build package
         run: uv build
 
-      - name: Preserve verified offline acceptance report
+      - name: Record exact-commit acceptance provenance
+        shell: bash
+        run: |
+          uv run --frozen python -c 'import hashlib, json, os, pathlib; p = pathlib.Path("ares-release-acceptance.json"); m = {"commit_sha": os.environ["GITHUB_SHA"], "event": os.environ["GITHUB_EVENT_NAME"], "runner_os": os.environ["RUNNER_OS"], "report_sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "report_file": p.name}; pathlib.Path("ares-acceptance-provenance.json").write_text(json.dumps(m, indent=2, sort_keys=True) + "\n", encoding="utf-8")'
+
+      - name: Preserve verified offline acceptance report and provenance
         uses: actions/upload-artifact@v4
         with:
           name: offline-acceptance-${{ matrix.os }}
-          path: ares-release-acceptance.json
+          path: |
+            ares-release-acceptance.json
+            ares-acceptance-provenance.json
           if-no-files-found: error
           retention-days: 14
