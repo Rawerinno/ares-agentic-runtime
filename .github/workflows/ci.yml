@@ -61,7 +61,7 @@ jobs:
       - name: Verify both acceptance artifact files and provenance digest
         shell: bash
         run: |
-          uv run --frozen python -c 'import hashlib, json, pathlib; report = pathlib.Path("ares-release-acceptance.json"); sidecar = pathlib.Path("ares-acceptance-provenance.json"); assert report.is_file() and sidecar.is_file(), "Missing acceptance artifact file"; data = json.loads(sidecar.read_text(encoding="utf-8")); assert data["report_file"] == report.name, "Incorrect report filename"; assert data["report_sha256"] == hashlib.sha256(report.read_bytes()).hexdigest(), "Acceptance report digest mismatch"'
+          uv run --frozen python -c 'import hashlib, json, os, pathlib, re; report = pathlib.Path("ares-release-acceptance.json"); sidecar = pathlib.Path("ares-acceptance-provenance.json"); assert report.is_file() and sidecar.is_file(), "Missing acceptance artifact file"; data = json.loads(sidecar.read_text(encoding="utf-8")); assert re.fullmatch(r"[0-9a-f]{40}", data["commit_sha"]), "Invalid commit SHA"; assert data["commit_sha"] == os.environ["GITHUB_SHA"], "Commit SHA mismatch"; assert data["event"] == os.environ["GITHUB_EVENT_NAME"], "Event mismatch"; assert data["runner_os"] == os.environ["RUNNER_OS"], "Runner OS mismatch"; assert data["report_file"] == report.name, "Incorrect report filename"; assert data["report_sha256"] == hashlib.sha256(report.read_bytes()).hexdigest(), "Acceptance report digest mismatch"'
 
       - name: Preserve verified offline acceptance report and provenance
         uses: actions/upload-artifact@v4
