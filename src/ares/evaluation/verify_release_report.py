@@ -29,6 +29,21 @@ def validate_report(value: object) -> tuple[str, ...]:
         return ("report_not_object",)
     report = cast(Mapping[str, object], value)
     errors: list[str] = []
+    expected_fields = {
+        "scope",
+        "scenario_count",
+        "simulated_model_calls",
+        "audit_entries_checked",
+        "checks",
+        "passed",
+        "total",
+        "all_passed",
+        "default_parallelism",
+        "device_actions",
+        "limitations",
+    }
+    if set(report) != expected_fields:
+        errors.append("report_field_set_mismatch")
 
     def require(name: str, expected: object) -> None:
         actual = report.get(name)
