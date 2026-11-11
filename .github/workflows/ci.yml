@@ -53,10 +53,22 @@ jobs:
       - name: Build package
         run: uv build
 
-      - name: Preserve verified offline acceptance report
+      - name: Record exact-commit acceptance provenance
+        shell: bash
+        run: |
+          uv run --frozen python -c 'import hashlib, json, os, pathlib; p = pathlib.Path("ares-release-acceptance.json"); m = {"commit_sha": os.environ["GITHUB_SHA"], "event": os.environ["GITHUB_EVENT_NAME"], "runner_os": os.environ["RUNNER_OS"], "report_sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "report_file": p.name}; pathlib.Path("ares-acceptance-provenance.json").write_text(json.dumps(m, indent=2, sort_keys=True) + "\n", encoding="utf-8")'
+
+      - name: Verify both acceptance artifact files and provenance digest
+        shell: bash
+        run: |
+          uv run --frozen python -c 'import hashlib, json, os, pathlib, re; report = pathlib.Path("ares-release-acceptance.json"); sidecar = pathlib.Path("ares-acceptance-provenance.json"); assert report.is_file() and sidecar.is_file(), "Missing acceptance artifact file"; data = json.loads(sidecar.read_text(encoding="utf-8")); assert re.fullmatch(r"[0-9a-f]{40}", data["commit_sha"]), "Invalid commit SHA"; assert data["commit_sha"] == os.environ["GITHUB_SHA"], "Commit SHA mismatch"; assert data["event"] == os.environ["GITHUB_EVENT_NAME"], "Event mismatch"; assert data["runner_os"] == os.environ["RUNNER_OS"], "Runner OS mismatch"; assert data["report_file"] == report.name, "Incorrect report filename"; assert data["report_sha256"] == hashlib.sha256(report.read_bytes()).hexdigest(), "Acceptance report digest mismatch"'
+
+      - name: Preserve verified offline acceptance report and provenance
         uses: actions/upload-artifact@v4
         with:
           name: offline-acceptance-${{ matrix.os }}
-          path: ares-release-acceptance.json
+          path: |
+            ares-release-acceptance.json
+            ares-acceptance-provenance.json
           if-no-files-found: error
           retention-days: 14
