@@ -60,6 +60,18 @@ def test_extra_checks_rejected_even_when_true() -> None:
     assert "check_set_mismatch" in validate_report(altered)
 
 
+def test_unexpected_top_level_fields_rejected() -> None:
+    altered = deepcopy(acceptance_report())
+    altered["device_write_authorized"] = True
+    assert "report_field_set_mismatch" in validate_report(altered)
+
+
+def test_missing_top_level_fields_rejected() -> None:
+    altered = deepcopy(acceptance_report())
+    altered.pop("limitations")
+    assert "report_field_set_mismatch" in validate_report(altered)
+
+
 def test_duplicate_json_keys_rejected(tmp_path: Path) -> None:
     report = tmp_path / "duplicate.json"
     report.write_text('{"scope":"offline_stub_only","scope":"live_ollama"}', encoding="utf-8")
