@@ -60,7 +60,6 @@ def test_extra_checks_rejected_even_when_true() -> None:
     assert "check_set_mismatch" in validate_report(altered)
 
 
-
 def test_unexpected_top_level_fields_rejected() -> None:
     altered = deepcopy(acceptance_report())
     altered["device_write_authorized"] = True
