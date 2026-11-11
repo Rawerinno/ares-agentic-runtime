@@ -58,6 +58,11 @@ jobs:
         run: |
           uv run --frozen python -c 'import hashlib, json, os, pathlib; p = pathlib.Path("ares-release-acceptance.json"); m = {"commit_sha": os.environ["GITHUB_SHA"], "event": os.environ["GITHUB_EVENT_NAME"], "runner_os": os.environ["RUNNER_OS"], "report_sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "report_file": p.name}; pathlib.Path("ares-acceptance-provenance.json").write_text(json.dumps(m, indent=2, sort_keys=True) + "\n", encoding="utf-8")'
 
+      - name: Verify both acceptance artifact files and provenance digest
+        shell: bash
+        run: |
+          uv run --frozen python -c 'import hashlib, json, pathlib; report = pathlib.Path("ares-release-acceptance.json"); sidecar = pathlib.Path("ares-acceptance-provenance.json"); assert report.is_file() and sidecar.is_file(), "Missing acceptance artifact file"; data = json.loads(sidecar.read_text(encoding="utf-8")); assert data["report_file"] == report.name, "Incorrect report filename"; assert data["report_sha256"] == hashlib.sha256(report.read_bytes()).hexdigest(), "Acceptance report digest mismatch"'
+
       - name: Preserve verified offline acceptance report and provenance
         uses: actions/upload-artifact@v4
         with:
