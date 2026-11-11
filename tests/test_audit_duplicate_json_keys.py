@@ -1,6 +1,7 @@
 """Adversarial JSONL audit parsing regression tests."""
 
 import json
+from collections.abc import Callable
 
 import pytest
 
@@ -12,17 +13,19 @@ def test_valid_audit_jsonl_roundtrip() -> None:
     assert from_jsonl(to_jsonl(entries)) == entries
 
 
-@pytest.mark.parametrize(
-    "mutate",
-    [
-        lambda line: line.replace(
-            '"event": "diagnostic"',
-            '"event": "diagnostic", "event": "diagnostic"',
-        ),
-        lambda line: line.replace('"temperature": 60', '"temperature": 60, "temperature": 60'),
-    ],
-)
-def test_duplicate_json_keys_fail_closed(mutate) -> None:
+def duplicate_event(line: str) -> str:
+    return line.replace(
+        '"event": "diagnostic"',
+        '"event": "diagnostic", "event": "diagnostic"',
+    )
+
+
+def duplicate_temperature(line: str) -> str:
+    return line.replace('"temperature": 60', '"temperature": 60, "temperature": 60')
+
+
+@pytest.mark.parametrize("mutate", [duplicate_event, duplicate_temperature])
+def test_duplicate_json_keys_fail_closed(mutate: Callable[[str], str]) -> None:
     entries = append_entry((), "diagnostic", {"temperature": 60})
     original = json.loads(to_jsonl(entries))
     line = json.dumps(original, sort_keys=True)
