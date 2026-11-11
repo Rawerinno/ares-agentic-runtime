@@ -56,12 +56,36 @@ audit validation interface before declaring evidence complete.
 
 Historical reference only: 5/18 unsupervised correct versus 18/18 with
 deterministic supervision; the rejected PR #100 yielded 4/18 unsupervised.
-These are **not** measurements from this run. If running the repository's
-live evidence-acceptance evaluation, use the documented invocation for the
-candidate commit and a paired baseline with the **same model, prompts,
-scenarios, sampling configuration and environment**. Record raw correctness,
-supervised correctness, model errors, rejected responses, latency and
-follow-up confusion. Do not claim improvement from incomparable runs.
+These are **not** measurements from this run.
+
+For an additional **distinct** nine-scenario evidence-followup evaluation,
+run both reference and live modes at the same candidate commit:
+
+```powershell
+uv run --frozen python -m ares.runtime.evidence_acceptance --repeats 2 --output ares-evidence-reference.json
+uv run --frozen python -m ares.runtime.evidence_acceptance --live --model llama3.2:3b --repeats 2 --output ares-evidence-live.json
+```
+
+Each report has 18 runs (nine cases repeated twice). Inspect `model_source`,
+`total_runs`, `evidence_correct`, `model_accepted`, `model_errors`,
+`acceptance_rate`, `followup_confusion`, `risk_authority` and
+`device_actions`. Require `evidence_correct == total_runs`,
+`risk_authority == "deterministic_incident_window"` and
+`device_actions == "disabled"`. Record the model version, output files,
+exit codes, timestamps and any exceptions. **Important:** this command's
+exit code reflects deterministic evidence correctness, **not** live-model
+follow-up acceptance. A zero exit code does not mean the model passed.
+A model error or lower-than-baseline model acceptance requires explicit
+review, not an automatic release approval.
+
+This nine-scenario follow-up suite is **not** the historical 18-case
+raw-versus-governed supervisor benchmark. Never compare its acceptance rate
+directly with 5/18, 4/18 or 18/18. To assess a change in live-model
+performance, use a paired baseline from the **same suite, model, prompts,
+scenarios, repeats, sampling configuration and environment**. Record raw
+correctness, supervised correctness, model errors, rejected responses,
+latency and follow-up confusion only where the selected suite actually
+reports those fields. Do not claim improvement from incomparable runs.
 
 ## 5. Release decision
 
