@@ -87,6 +87,16 @@ def to_jsonl(entries: tuple[AuditEntry, ...]) -> str:
     return "\n".join(lines) + ("\n" if lines else "")
 
 
+def _unique_object_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous JSON objects at every nesting level."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise AuditIntegrityError("audit_duplicate_json_key")
+        result[key] = value
+    return result
+
+
 def from_jsonl(content: str) -> tuple[AuditEntry, ...]:
     """Reject malformed or tampered JSONL without partial recovery."""
     entries: list[AuditEntry] = []
@@ -94,7 +104,7 @@ def from_jsonl(content: str) -> tuple[AuditEntry, ...]:
         for line in content.splitlines():
             if not line:
                 raise AuditIntegrityError("audit_blank_line")
-            value: object = json.loads(line)
+            value: object = json.loads(line, object_pairs_hook=_unique_object_keys)
             if not isinstance(value, dict):
                 raise AuditIntegrityError("audit_record_invalid")
             fields = cast("dict[str, object]", value)
