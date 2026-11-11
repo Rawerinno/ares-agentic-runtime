@@ -15,7 +15,10 @@ def test_valid_audit_jsonl_roundtrip() -> None:
 @pytest.mark.parametrize(
     "mutate",
     [
-        lambda line: line.replace('"event": "diagnostic"', '"event": "diagnostic", "event": "diagnostic"'),
+        lambda line: line.replace(
+            '"event": "diagnostic"',
+            '"event": "diagnostic", "event": "diagnostic"',
+        ),
         lambda line: line.replace('"temperature": 60', '"temperature": 60, "temperature": 60'),
     ],
 )
