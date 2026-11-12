@@ -1,4 +1,5 @@
 """Regression tests for fail-closed downloaded acceptance provenance verification."""
+
 from __future__ import annotations
 
 import hashlib
@@ -71,9 +72,7 @@ def test_accepts_matching_platform_artifacts(tmp_path: Path) -> None:
         ("extra_field", "unexpected provenance fields"),
     ],
 )
-def test_rejects_invalid_windows_artifact(
-    tmp_path: Path, mutation: str, expected: str
-) -> None:
+def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expected: str) -> None:
     ubuntu, windows = tmp_path / "ubuntu", tmp_path / "windows"
     write_artifact(ubuntu, "Linux")
     write_artifact(windows, "Windows")
