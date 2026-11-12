@@ -38,7 +38,9 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
     if not report.is_file() or not provenance.is_file():
         raise ValueError(f"{directory}: missing report or provenance JSON")
     try:
-        data = json.loads(\n            provenance.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys\n        )
+        data = json.loads(
+            provenance.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys
+        )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"{directory}: invalid provenance JSON: {exc}") from exc
     if not isinstance(data, dict) or set(data) != EXPECTED_FIELDS:
