@@ -1,22 +1,36 @@
 # ARES v1.0 — exact-SHA release handoff (candidate only)
 
-Updated 2026-11-11 UTC. This is a **release gate**, not an approval or a substitute for actual CI evidence.
+Updated 2026-11-12 UTC. This is a **release gate**, not an approval. Always use the *current* main HEAD; never treat a previously documented commit or a PR workflow as proof for a newer release candidate.
 
-## Candidate
+## Candidate identification
 
-- Candidate `main` commit: `0e768351872a36cbb8bd520341eef43283a22839` (merged [PR #114](https://github.com/Rawerinno/ares-agentic-runtime/pull/114)).
-- Earlier [release evidence manifest](v1-release-evidence-manifest.md) is a **historical snapshot** of PR #112; its baseline SHA and artifact digests do not validate this candidate.
-- [Local validation checklist](v1-local-validation-checklist.md) remains the operator handoff.
-- Historical 5/18 unsupervised, 4/18 on rejected PR #100, and 18/18 supervised are **not rerun** results. Do not reopen PR #100.
+1. Read the latest `main` SHA from GitHub and record its full 40-character value as `CANDIDATE_SHA`. Confirm the checkout matches: `git fetch origin main && git checkout main && git pull --ff-only && git rev-parse HEAD`.
+2. Freeze this SHA for the acceptance review. If main advances, restart the exact-SHA checks for the new candidate. Do not reuse evidence from an earlier SHA.
+3. Historical reference: 5/18 unsupervised, 4/18 with rejected PR #100, and 18/18 supervised. These are **not** new test results. Never reopen PR #100.
 
 ## Exact-SHA CI gate
 
-1. Locate the **push-to-main** GitHub Actions run whose `head_sha` is **exactly** `0e768351872a36cbb8bd520341eef43283a22839`. A successful pull-request run is not a substitute.
-2. Confirm both Ubuntu and Windows jobs completed successfully, including Ruff, formatting, Pyright, pytest, offline acceptance, invariant verification, package build, provenance validation and artifact upload.
-3. Download **both** `offline-acceptance-ubuntu-latest` and `offline-acceptance-windows-latest` artifacts before their retention deadline. In each, require both `ares-release-acceptance.json` and `ares-acceptance-provenance.json`.
-4. For each operating system, independently recompute the report's SHA-256 and compare to `report_sha256`; require `commit_sha` to match the candidate above, `event` to equal `push`, `runner_os` to match the job, and `report_file` to equal `ares-release-acceptance.json`. Run `python -m ares.evaluation.verify_release_report` on each downloaded report in the exact candidate checkout. Do not confuse the archive digest with the inner JSON digest.
-5. Preserve run URL, run ID, artifact IDs, hashes, download date and verification output. **Any missing run, artifact, field or check is NOT CONFIRMED, not PASSED.**
+1. In [ARES Actions](https://github.com/Rawerinno/ares-agentic-runtime/actions/workflows/ci.yml), identify a **push** run on `main` whose `head_sha` equals `CANDIDATE_SHA` exactly. A green pull-request run is insufficient. If no such run is available, mark the gate **NOT CONFIRMED**.
+2. Verify both Ubuntu and Windows jobs succeeded, including Ruff, formatting, Pyright, pytest, offline acceptance, report invariants, build, provenance verification, and artifact upload.
+3. Download `offline-acceptance-ubuntu-latest` and `offline-acceptance-windows-latest` from that *same* run. Extract into separate directories (for example `evidence/ubuntu` and `evidence/windows`). Each must contain `ares-release-acceptance.json` and `ares-acceptance-provenance.json`.
+4. In the exact-SHA checkout, run:
 
-## Security and release decision
+   ```powershell
+   $sha = (git rev-parse HEAD).Trim()
+   python scripts/verify_acceptance_artifacts.py --sha $sha --ubuntu evidence/ubuntu --windows evidence/windows
+   python -m ares.evaluation.verify_release_report evidence/ubuntu/ares-release-acceptance.json
+   python -m ares.evaluation.verify_release_report evidence/windows/ares-release-acceptance.json
+   ```
 
-Only simulation, read-only advisory behavior is in scope. Device/actuator/destructive actions stay disabled; deterministic supervision, human approvals and audit invariants must remain enforced. Do not infer physical or real-time safety from CI. The repository was reported **public** despite the intended private policy; confirm and correct visibility before sharing sensitive content. Local Ollama tests are **NOT RUN** for this candidate until executed and recorded by the operator. Release status: **CANDIDATE — NOT APPROVED** pending exact-SHA main CI, artifact verification, access policy and local validation.
+   The first command checks downloaded evidence identity and SHA-256 integrity for both operating systems, **not** semantic acceptance; the latter two independently check report invariants. Any failure blocks release.
+5. Preserve the exact commit SHA, workflow run URL and ID, job conclusions, artifact IDs, report SHA-256 digests, download date and verifier outputs. Archive SHA-256 is **not** the same as the inner JSON report SHA-256.
+
+## Safety and release decision
+
+Only simulated, read-only advisory behavior is in scope. Physical/device/destructive actions remain disabled. Deterministic supervision, human approvals, audit integrity and fail-closed behavior must not be weakened. CI does not prove real-world device safety.
+
+Check repository visibility before release: the repository was observed **public** on 2026-11-12 despite the intended private policy. Do not upload secrets or sensitive evidence until access policy is corrected and confirmed.
+
+Complete [local validation](v1-local-validation-checklist.md) with Ollama only when the operator is available. Record actual commands, model/version, results and failures; never infer live-model success from offline CI.
+
+**Release status: CANDIDATE — NOT APPROVED** until exact-SHA main CI, both downloaded artifact verifications, access policy, and local validation are confirmed.
