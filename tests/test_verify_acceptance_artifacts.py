@@ -120,3 +120,30 @@ def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expecte
     assert expected in result.stderr
     assert "FAIL:" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"accepted": true, "accepted": false}',
+        '{"nested": {"x": 1, "x": 2}}',
+        '{"metric": NaN}',
+        '{"metric": Infinity}',
+        '{"metric": -Infinity}',
+    ],
+)
+def test_rejects_ambiguous_report_even_with_matching_digest(tmp_path: Path, payload: str) -> None:
+    ubuntu, windows = tmp_path / "ubuntu", tmp_path / "windows"
+    write_artifact(ubuntu, "Linux")
+    write_artifact(windows, "Windows")
+    report = windows / "ares-release-acceptance.json"
+    report.write_text(payload, encoding="utf-8")
+    sidecar = windows / "ares-acceptance-provenance.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["report_sha256"] = hashlib.sha256(report.read_bytes()).hexdigest()
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    result = run_verifier(ubuntu, windows)
+    assert result.returncode != 0
+    assert "FAIL:" in result.stderr
+    assert "invalid report JSON" in result.stderr
+    assert "Traceback" not in result.stderr

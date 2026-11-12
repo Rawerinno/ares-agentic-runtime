@@ -32,6 +32,11 @@ def reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
+def reject_nonfinite_constant(value: str) -> None:
+    """Reject non-standard JSON NaN and Infinity values."""
+    raise ValueError(f"non-finite JSON constant: {value}")
+
+
 def verify(directory: Path, sha: str, os_name: str) -> str:
     report = directory / REPORT
     provenance = directory / PROVENANCE
@@ -62,8 +67,12 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
     ):
         raise ValueError(f"{directory}: report SHA-256 mismatch")
     try:
-        json.loads(report.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        json.loads(
+            report.read_text(encoding="utf-8"),
+            object_pairs_hook=reject_duplicate_keys,
+            parse_constant=reject_nonfinite_constant,
+        )
+    except (OSError, UnicodeError, ValueError) as exc:
         raise ValueError(f"{directory}: invalid report JSON: {exc}") from exc
     return digest
 
