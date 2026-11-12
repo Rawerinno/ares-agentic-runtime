@@ -71,6 +71,7 @@ def test_accepts_matching_platform_artifacts(tmp_path: Path) -> None:
         ("invalid_sidecar", "invalid provenance JSON"),
         ("extra_field", "unexpected provenance fields"),
         ("duplicate_field", "duplicate JSON key"),
+        ("nested_duplicate_field", "duplicate JSON key"),
     ],
 )
 def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expected: str) -> None:
@@ -93,6 +94,12 @@ def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expecte
             original.replace('"event": "push"', '"event": "push", "event": "pull_request"'),
             encoding="utf-8",
         )
+    elif mutation == "nested_duplicate_field":
+        original = sidecar.read_text(encoding="utf-8")
+        sidecar.write_text(
+            original.replace('"event": "push"', '"event": {"a": 1, "a": 2}'),
+            encoding="utf-8",
+        )
     else:
         data = json.loads(sidecar.read_text(encoding="utf-8"))
         if mutation == "wrong_sha":
@@ -111,3 +118,5 @@ def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expecte
     result = run_verifier(ubuntu, windows)
     assert result.returncode != 0
     assert expected in result.stderr
+    assert "FAIL:" in result.stderr
+    assert "Traceback" not in result.stderr
