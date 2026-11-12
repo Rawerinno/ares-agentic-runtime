@@ -70,6 +70,7 @@ def test_accepts_matching_platform_artifacts(tmp_path: Path) -> None:
         ("invalid_report", "report SHA-256 mismatch"),
         ("invalid_sidecar", "invalid provenance JSON"),
         ("extra_field", "unexpected provenance fields"),
+        ("duplicate_field", "duplicate JSON key"),
     ],
 )
 def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expected: str) -> None:
@@ -86,6 +87,12 @@ def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expecte
         report.write_text("{", encoding="utf-8")
     elif mutation == "invalid_sidecar":
         sidecar.write_text("{", encoding="utf-8")
+    elif mutation == "duplicate_field":
+        original = sidecar.read_text(encoding="utf-8")
+        sidecar.write_text(
+            original.replace('"event": "push"', '"event": "push", "event": "pull_request"'),
+            encoding="utf-8",
+        )
     else:
         data = json.loads(sidecar.read_text(encoding="utf-8"))
         if mutation == "wrong_sha":
