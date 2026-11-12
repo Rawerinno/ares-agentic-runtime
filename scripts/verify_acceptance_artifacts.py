@@ -67,11 +67,13 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
     ):
         raise ValueError(f"{directory}: report SHA-256 mismatch")
     try:
-        json.loads(
+        report_data = json.loads(
             report.read_text(encoding="utf-8"),
             object_pairs_hook=reject_duplicate_keys,
             parse_constant=reject_nonfinite_constant,
         )
+        if not isinstance(report_data, dict):
+            raise ValueError("top-level report must be a JSON object")
     except (OSError, UnicodeError, ValueError) as exc:
         raise ValueError(f"{directory}: invalid report JSON: {exc}") from exc
     return digest
