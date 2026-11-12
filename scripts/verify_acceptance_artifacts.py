@@ -41,7 +41,7 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
         data = json.loads(
             provenance.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys
         )
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeError, ValueError) as exc:
         raise ValueError(f"{directory}: invalid provenance JSON: {exc}") from exc
     if not isinstance(data, dict) or set(data) != EXPECTED_FIELDS:
         raise ValueError(f"{directory}: unexpected provenance fields")
