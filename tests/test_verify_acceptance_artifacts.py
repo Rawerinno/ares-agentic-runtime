@@ -132,9 +132,7 @@ def test_rejects_invalid_windows_artifact(tmp_path: Path, mutation: str, expecte
         '{"metric": -Infinity}',
     ],
 )
-def test_rejects_ambiguous_report_even_with_matching_digest(
-    tmp_path: Path, payload: str
-) -> None:
+def test_rejects_ambiguous_report_even_with_matching_digest(tmp_path: Path, payload: str) -> None:
     ubuntu, windows = tmp_path / "ubuntu", tmp_path / "windows"
     write_artifact(ubuntu, "Linux")
     write_artifact(windows, "Windows")
