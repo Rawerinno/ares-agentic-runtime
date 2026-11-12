@@ -6,6 +6,7 @@ Usage:
 The directories must contain the two *extracted* JSON files from each CI artifact.
 This verifies provenance/integrity only, not the report's semantic invariants.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,9 +43,11 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
         if data[field] != value:
             raise ValueError(f"{directory}: {field} mismatch")
     digest = hashlib.sha256(report.read_bytes()).hexdigest()
-    if not isinstance(data["report_sha256"], str) or not re.fullmatch(
-        r"[0-9a-f]{64}", data["report_sha256"]
-    ) or data["report_sha256"] != digest:
+    if (
+        not isinstance(data["report_sha256"], str)
+        or not re.fullmatch(r"[0-9a-f]{64}", data["report_sha256"])
+        or data["report_sha256"] != digest
+    ):
         raise ValueError(f"{directory}: report SHA-256 mismatch")
     try:
         json.loads(report.read_text(encoding="utf-8"))
