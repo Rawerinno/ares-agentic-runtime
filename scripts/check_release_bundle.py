@@ -16,13 +16,14 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from ares.evaluation.verify_release_report import validate_report
 from verify_acceptance_artifacts import (
     REPORT,
     reject_duplicate_keys,
     reject_nonfinite_constant,
     verify,
 )
+
+from ares.evaluation.verify_release_report import validate_report
 
 
 def check(directory: Path, sha: str, runner: str) -> str:
