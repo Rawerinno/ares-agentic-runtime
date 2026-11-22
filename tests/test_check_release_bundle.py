@@ -86,9 +86,7 @@ def test_both_exact_sha_bundles_pass(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("field", ["device_actions", "all_passed", "scenario_count"])
-def test_digest_valid_but_semantically_invalid_bundle_rejected(
-    tmp_path: Path, field: str
-) -> None:
+def test_digest_valid_but_semantically_invalid_bundle_rejected(tmp_path: Path, field: str) -> None:
     ubuntu, windows = tmp_path / "ubuntu", tmp_path / "windows"
     write_bundle(ubuntu, "Linux", valid_report())
     altered = valid_report()
