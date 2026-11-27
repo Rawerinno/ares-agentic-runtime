@@ -146,6 +146,15 @@ invariants. Keep the generated JSON alongside the candidate commit SHA and
 CI run URL as release evidence. This verifies report consistency, not the
 trustworthiness of the report producer.
 
+For downloaded Ubuntu and Windows CI artifacts, use the combined gate:
+
+```powershell
+uv run python scripts/check_release_bundle.py --sha <MAIN_SHA> --ubuntu <UBUNTU_DIR> --windows <WINDOWS_DIR>
+```
+
+Each report is hashed and parsed from the same byte snapshot. This does not
+establish producer authenticity or replace exact-commit CI and release approval.
+
 Inspect the JSON report before accepting a candidate. Require
 `scope == "offline_stub_only"`, `all_passed == true`,
 `device_actions == "disabled"`, `default_parallelism == 1`, and

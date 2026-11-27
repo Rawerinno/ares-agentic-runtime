@@ -96,3 +96,54 @@ def test_digest_valid_but_semantically_invalid_bundle_rejected(tmp_path: Path, f
     assert result.returncode == 1
     assert "FAIL:" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("initially_valid", [True, False])
+def test_semantics_use_only_digest_verified_bytes(tmp_path: Path, initially_valid: bool) -> None:
+    folder = tmp_path / "ubuntu"
+    report = valid_report()
+    report["all_passed"] = initially_valid
+    write_bundle(folder, "Linux", report)
+    # Execute in a separate interpreter to avoid changing the test process.
+    # Replace the report immediately after the first read returns its bytes.
+    code = """
+import json
+import sys
+from pathlib import Path
+from check_release_bundle import check
+
+folder = Path(sys.argv[1])
+sha = sys.argv[2]
+target = folder / "ares-release-acceptance.json"
+original = Path.read_bytes
+calls = 0
+
+def read_bytes(path):
+    global calls
+    data = original(path)
+    if path == target:
+        calls += 1
+        changed = json.loads(data)
+        changed["all_passed"] = not changed["all_passed"]
+        target.write_text(json.dumps(changed), encoding="utf-8")
+    return data
+
+Path.read_bytes = read_bytes
+try:
+    check(folder, sha, "ubuntu")
+except ValueError:
+    outcome = "rejected"
+else:
+    outcome = "accepted"
+assert calls == 1, calls
+print(outcome)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(folder), SHA],
+        cwd=SCRIPT.parent,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == ("accepted" if initially_valid else "rejected")

@@ -10,30 +10,19 @@ Integrity and semantic checks are necessary, not sufficient, for a release.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
 from typing import cast
 
-from verify_acceptance_artifacts import (
-    REPORT,
-    reject_duplicate_keys,
-    reject_nonfinite_constant,
-    verify,
-)
+from verify_acceptance_artifacts import verify_snapshot
 
 from ares.evaluation.verify_release_report import validate_report
 
 
 def check(directory: Path, sha: str, runner: str) -> str:
     """Verify binding to the main commit and offline invariants of a single OS."""
-    digest = verify(directory, sha, runner)
-    report: object = json.loads(
-        (directory / REPORT).read_text(encoding="utf-8"),
-        object_pairs_hook=reject_duplicate_keys,
-        parse_constant=reject_nonfinite_constant,
-    )
+    digest, report = verify_snapshot(directory, sha, runner)
     errors = validate_report(report)
     if errors:
         raise ValueError(f"{runner}: offline invariants rejected: {', '.join(errors)}")
