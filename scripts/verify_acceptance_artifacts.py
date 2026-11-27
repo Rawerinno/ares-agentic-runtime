@@ -37,7 +37,8 @@ def reject_nonfinite_constant(value: str) -> None:
     raise ValueError(f"non-finite JSON constant: {value}")
 
 
-def verify(directory: Path, sha: str, os_name: str) -> str:
+def verify_snapshot(directory: Path, sha: str, os_name: str) -> tuple[str, object]:
+    """Return the digest and parsed report from the same immutable bytes."""
     report = directory / REPORT
     provenance = directory / PROVENANCE
     if not report.is_file() or not provenance.is_file():
@@ -59,7 +60,8 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
     for field, value in expected.items():
         if data[field] != value:
             raise ValueError(f"{directory}: {field} mismatch")
-    digest = hashlib.sha256(report.read_bytes()).hexdigest()
+    report_bytes = report.read_bytes()
+    digest = hashlib.sha256(report_bytes).hexdigest()
     if (
         not isinstance(data["report_sha256"], str)
         or not re.fullmatch(r"[0-9a-f]{64}", data["report_sha256"])
@@ -68,7 +70,7 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
         raise ValueError(f"{directory}: report SHA-256 mismatch")
     try:
         report_data = json.loads(
-            report.read_text(encoding="utf-8"),
+            report_bytes.decode("utf-8"),
             object_pairs_hook=reject_duplicate_keys,
             parse_constant=reject_nonfinite_constant,
         )
@@ -76,6 +78,11 @@ def verify(directory: Path, sha: str, os_name: str) -> str:
             raise ValueError("top-level report must be a JSON object")
     except (OSError, UnicodeError, ValueError) as exc:
         raise ValueError(f"{directory}: invalid report JSON: {exc}") from exc
+    return digest, report_data
+
+
+def verify(directory: Path, sha: str, os_name: str) -> str:
+    digest, _ = verify_snapshot(directory, sha, os_name)
     return digest
 
 
