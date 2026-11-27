@@ -99,9 +99,7 @@ def test_digest_valid_but_semantically_invalid_bundle_rejected(tmp_path: Path, f
 
 
 @pytest.mark.parametrize("initially_valid", [True, False])
-def test_semantics_use_only_digest_verified_bytes(
-    tmp_path: Path, initially_valid: bool
-) -> None:
+def test_semantics_use_only_digest_verified_bytes(tmp_path: Path, initially_valid: bool) -> None:
     folder = tmp_path / "ubuntu"
     report = valid_report()
     report["all_passed"] = initially_valid
